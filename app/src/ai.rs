@@ -298,18 +298,31 @@ impl Drop for Handle {
 
 /// Gửi một yêu cầu HTTPS tới máy chủ Gemini. Trả về (mã trạng thái, nội dung).
 fn https(method: &str, path: &str, api_key: &str, body: Option<&str>) -> Result<(u32, String), String> {
+    let headers = format!("Content-Type: application/json; charset=utf-8\r\nx-goog-api-key: {api_key}\r\n");
+    let (status, buf) = https_request(HOST, method, path, &headers, body.map(str::as_bytes))?;
+    Ok((status, String::from_utf8_lossy(&buf).into_owned()))
+}
+
+/// Gửi một yêu cầu HTTPS (WinHTTP, tự theo chuyển hướng). Trả về (mã trạng thái, nội dung).
+pub(crate) fn https_request(
+    host: &str,
+    method: &str,
+    path: &str,
+    headers: &str,
+    body: Option<&[u8]>,
+) -> Result<(u32, Vec<u8>), String> {
     let err = |what: &str| format!("{what} (lỗi Windows {})", unsafe { windows_sys::Win32::Foundation::GetLastError() });
     unsafe {
-        let agent = wide("C_Input/1.0");
+        let agent = wide(concat!("C_Input/", env!("CARGO_PKG_VERSION")));
         let session = Handle(WinHttpOpen(agent.as_ptr(), WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, null(), null(), 0));
         if session.0.is_null() {
             return Err(err("Không mở được kết nối mạng"));
         }
         WinHttpSetTimeouts(session.0, 10_000, 10_000, 15_000, 30_000);
-        let host = wide(HOST);
+        let host = wide(host);
         let connect = Handle(WinHttpConnect(session.0, host.as_ptr(), 443, 0));
         if connect.0.is_null() {
-            return Err(err("Không kết nối được máy chủ Gemini"));
+            return Err(err("Không kết nối được máy chủ"));
         }
         let verb = wide(method);
         let obj = wide(path);
@@ -318,8 +331,8 @@ fn https(method: &str, path: &str, api_key: &str, body: Option<&str>) -> Result<
             return Err(err("Không tạo được yêu cầu"));
         }
         // API key gửi trong header (không đặt trong URL).
-        let headers = wide(&format!("Content-Type: application/json; charset=utf-8\r\nx-goog-api-key: {api_key}\r\n"));
-        let payload = body.unwrap_or("").as_bytes();
+        let headers = wide(headers);
+        let payload = body.unwrap_or(&[]);
         let ok = WinHttpSendRequest(
             req.0,
             headers.as_ptr(),
@@ -330,7 +343,7 @@ fn https(method: &str, path: &str, api_key: &str, body: Option<&str>) -> Result<
             0,
         );
         if ok == 0 || WinHttpReceiveResponse(req.0, null_mut()) == 0 {
-            return Err(err("Không gửi được yêu cầu tới Gemini — kiểm tra kết nối mạng"));
+            return Err(err("Không gửi được yêu cầu — kiểm tra kết nối mạng"));
         }
         let mut status: u32 = 0;
         let mut len = std::mem::size_of::<u32>() as u32;
@@ -356,7 +369,7 @@ fn https(method: &str, path: &str, api_key: &str, body: Option<&str>) -> Result<
             }
             buf.truncate(start + read as usize);
         }
-        Ok((status, String::from_utf8_lossy(&buf).into_owned()))
+        Ok((status, buf))
     }
 }
 

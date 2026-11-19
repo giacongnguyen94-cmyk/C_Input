@@ -76,7 +76,7 @@ fn free_order_keys(word: &str, method: InputMethod) -> Vec<char> {
         }
     }
     let mut keys = base;
-    if let Some(k) = crate::method::tone_key(method, tone) {
+    if let Some(k) = crate::method::tone_key(method, None, tone) {
         keys.push(k);
     }
     keys.extend(marks);
@@ -90,8 +90,8 @@ fn every_syllable_types_correctly() {
     let mut failures = Vec::new();
     let mut checked = 0;
     for modern in [true, false] {
-        for method in [InputMethod::Telex, InputMethod::Vni] {
-            let opt = Options { method, modern_tone: modern, spell_check: true, english_words: true };
+        for method in [InputMethod::Telex, InputMethod::Vni, InputMethod::Viqr] {
+            let opt = Options { method, modern_tone: modern, spell_check: true, english_words: true, ..Default::default() };
             for (letters, tone) in &sylls {
                 let word = render(letters, *tone, modern);
                 // Telex: "oo" luôn thành "ô" (xoong phải gõ "xooong") — giới hạn của kiểu gõ, như UniKey.
@@ -112,7 +112,9 @@ fn every_syllable_types_correctly() {
                         _ => word.to_uppercase(),
                     };
                     let mut variants = vec![("chuẩn", encode(&w, method).unwrap())];
-                    variants.push(("tự do", free_order_keys(&w, method)));
+                    if method != InputMethod::Viqr {
+                        variants.push(("tự do", free_order_keys(&w, method)));
+                    }
                     for (kind, keys) in variants {
                         checked += 1;
                         let t = transform(&keys, &opt);
@@ -148,7 +150,7 @@ fn english_words_report() {
         only come its over think also back after use two how our work first well way even new want because any these \
         give day most us is was are has had were said did windows text user email file folder google facebook \
         string class public return print code server data error update login password chrome excel word";
-    let opt = Options { method: InputMethod::Telex, modern_tone: true, spell_check: true, english_words: true };
+    let opt = Options { method: InputMethod::Telex, modern_tone: true, spell_check: true, english_words: true, ..Default::default() };
     let mut changed = Vec::new();
     for w in words.split_whitespace() {
         // Đi đúng đường của bộ gõ: từng phím qua Engine rồi kết thúc từ (có danh sách tiếng Anh).
@@ -181,7 +183,7 @@ const NOT_REAL_VI: [&str; 15] = [
 #[test]
 fn english_list_never_blocks_vietnamese() {
     let english = crate::EnglishWords::builtin();
-    let opt = Options { method: InputMethod::Telex, modern_tone: true, spell_check: true, english_words: true };
+    let opt = Options { method: InputMethod::Telex, modern_tone: true, spell_check: true, english_words: true, ..Default::default() };
     let mut clashes = std::collections::BTreeSet::new();
     let mut free_order = std::collections::BTreeSet::new();
     for (letters, tone) in all_syllables() {

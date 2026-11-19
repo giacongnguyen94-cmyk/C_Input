@@ -15,7 +15,7 @@ pub mod types;
 pub use engine::{Edit, Engine, KeyOutcome, Options, transform};
 pub use english::EnglishWords;
 pub use macros::MacroTable;
-pub use method::InputMethod;
+pub use method::{InputMethod, KeyAction, KeyMap};
 
 #[cfg(test)]
 mod tests;

@@ -7,7 +7,7 @@
 
 use crate::english::EnglishWords;
 use crate::macros::MacroTable;
-use crate::method::{InputMethod, Role, classify, mark_key, tone_key};
+use crate::method::{InputMethod, KeyMap, Role, classify, is_mark_char, mark_key, standalone_w, tone_key};
 use crate::spell::{is_valid_prefix, is_valid_word, split, tone_position};
 use crate::types::{Letter, Mark, Tone, compose, decompose, mark_fits};
 
@@ -22,11 +22,29 @@ pub struct Options {
     /// Gõ đúng một từ tiếng Anh trong danh sách (test, error...) thì giữ tiếng Anh khi kết thúc từ.
     /// Độc lập với `spell_check`.
     pub english_words: bool,
+    /// Gõ dấu tự do: phím dấu áp được cho nguyên âm ở bất kỳ đâu trong từ ("tiengs" → tiếng).
+    /// Tắt: dấu phụ (mũ, móc, trăng, đ) chỉ áp cho chữ vừa gõ ngay trước; dấu thanh vẫn tự do.
+    pub free_marking: bool,
+    /// Bảng phím cho kiểu gõ tự định nghĩa.
+    pub keymap: Option<std::sync::Arc<KeyMap>>,
 }
 
 impl Default for Options {
     fn default() -> Self {
-        Options { method: InputMethod::Telex, modern_tone: true, spell_check: true, english_words: true }
+        Options {
+            method: InputMethod::Telex,
+            modern_tone: true,
+            spell_check: true,
+            english_words: true,
+            free_marking: true,
+            keymap: None,
+        }
+    }
+}
+
+impl Options {
+    fn km(&self) -> Option<&KeyMap> {
+        self.keymap.as_deref()
     }
 }
 
@@ -158,7 +176,8 @@ fn apply(w: &mut Word, key: char, opt: &Options) -> bool {
         w.literal = true;
         true
     };
-    match classify(opt.method, key) {
+    let last = w.letters.len().wrapping_sub(1);
+    match classify(opt.method, opt.km(), key) {
         Role::Letter => push(w),
         Role::Insert(l) => {
             let k = key.to_ascii_lowercase();
@@ -194,6 +213,7 @@ fn apply(w: &mut Word, key: char, opt: &Options) -> bool {
                 push(w)
             }
         }
+        Role::Stroke if !opt.free_marking && w.letters.len() != 1 => push(w),
         Role::Stroke => match w.letters.first().map(|l| (l.base, l.mark)) {
             Some(('d', Mark::None)) => {
                 w.letters[0].mark = Mark::Stroke;
@@ -208,6 +228,7 @@ fn apply(w: &mut Word, key: char, opt: &Options) -> bool {
         Role::Hat(target) => {
             let nr = nucleus_range(w);
             match w.letters[nr.clone()].iter().rposition(|l| l.base == target) {
+                Some(i) if !opt.free_marking && nr.start + i != last => push(w),
                 Some(i) => {
                     let i = nr.start + i;
                     if w.letters[i].mark == Mark::Hat {
@@ -227,7 +248,8 @@ fn apply(w: &mut Word, key: char, opt: &Options) -> bool {
             let nr = nucleus_range(w);
             let nuc = &w.letters[nr.clone()];
             // "uo" → "ươ" (cả hai cùng có móc).
-            if let Some(i) = nuc.windows(2).position(|p| p[0].base == 'u' && p[1].base == 'o') {
+            let uo = nuc.windows(2).position(|p| p[0].base == 'u' && p[1].base == 'o');
+            if let Some(i) = uo.filter(|&i| opt.free_marking || nr.start + i + 1 == last) {
                 let (a, b) = (nr.start + i, nr.start + i + 1);
                 if w.letters[b].mark == Mark::Horn {
                     w.letters[a].mark = Mark::None;
@@ -239,15 +261,15 @@ fn apply(w: &mut Word, key: char, opt: &Options) -> bool {
                 return true;
             }
             if nuc.is_empty() {
-                // Telex: w đứng riêng thành ư (trừ Telex đơn giản).
-                if opt.method == InputMethod::Telex {
+                // Telex: w đứng riêng thành ư (trừ Telex đơn giản; kiểu tự định nghĩa: phím Telex-W).
+                if standalone_w(opt.method, opt.km(), key) {
                     w.letters.push(Letter { base: 'u', mark: Mark::Horn, upper });
-                    w.created = Some((w.letters.len() - 1, 'w'));
+                    w.created = Some((w.letters.len() - 1, key.to_ascii_lowercase()));
                     return true;
                 }
                 return push(w);
             }
-            let targets: &[char] = if matches!(classify(opt.method, key), Role::Horn) {
+            let targets: &[char] = if matches!(classify(opt.method, opt.km(), key), Role::Horn) {
                 &['u', 'o']
             } else {
                 &['u', 'o', 'a']
@@ -266,7 +288,7 @@ fn apply_horn(w: &mut Word, key: char, opt: &Options, targets: &[char]) -> bool 
         .position(|l| matches!(l.mark, Mark::Horn | Mark::Breve) && targets.contains(&l.base))
     {
         let idx = nr.start + i;
-        if w.created == Some((idx, 'w')) {
+        if w.created == Some((idx, key.to_ascii_lowercase())) {
             // "ww" → "w": chữ ư do chính phím w tạo ra → trả lại chữ w (giữ hoa/thường của lần gõ đầu).
             let up = w.letters[idx].upper;
             w.letters[idx] = Letter { base: 'w', mark: Mark::None, upper: up };
@@ -280,9 +302,10 @@ fn apply_horn(w: &mut Word, key: char, opt: &Options, targets: &[char]) -> bool 
         return true;
     }
     let mut candidates = Vec::new();
+    let last = w.letters.len().wrapping_sub(1);
     for &t in targets {
         for i in nr.clone() {
-            if w.letters[i].base == t && w.letters[i].mark == Mark::None {
+            if w.letters[i].base == t && w.letters[i].mark == Mark::None && (opt.free_marking || i == last) {
                 candidates.push(i);
             }
         }
@@ -325,6 +348,7 @@ fn apply_mark(w: &mut Word, key: char, opt: &Options, mark: Mark, targets: &[cha
         .clone()
         .rev()
         .filter(|&i| targets.contains(&w.letters[i].base) && mark_fits(w.letters[i].base, mark))
+        .filter(|&i| opt.free_marking || i + 1 == w.letters.len())
         .collect();
     let chosen = candidates
         .iter()
@@ -349,6 +373,11 @@ fn apply_mark(w: &mut Word, key: char, opt: &Options, mark: Mark, targets: &[cha
 
 /// Mã hoá ngược một từ đã hiển thị thành dãy phím (dùng sau khi người dùng xoá lùi).
 pub fn encode(text: &str, method: InputMethod) -> Option<Vec<char>> {
+    encode_with(text, method, None)
+}
+
+/// Như `encode`, có bảng phím cho kiểu gõ tự định nghĩa.
+pub fn encode_with(text: &str, method: InputMethod, keymap: Option<&KeyMap>) -> Option<Vec<char>> {
     let mut keys = Vec::new();
     let mut tone = Tone::None;
     for c in text.chars() {
@@ -357,12 +386,14 @@ pub fn encode(text: &str, method: InputMethod) -> Option<Vec<char>> {
             tone = t;
         }
         keys.push(if l.upper { l.base.to_ascii_uppercase() } else { l.base });
-        if let Some(k) = mark_key(method, &l) {
-            keys.push(k);
+        match mark_key(method, keymap, &l) {
+            None => {}
+            Some(Some(k)) => keys.push(k),
+            Some(None) => return None,
         }
     }
-    if let Some(k) = tone_key(method, tone) {
-        keys.push(k);
+    if tone != Tone::None {
+        keys.push(tone_key(method, keymap, tone)?);
     }
     Some(keys)
 }
@@ -484,6 +515,10 @@ pub struct Engine {
     last: Option<Transformed>,
     /// Các từ vừa kết thúc (mỗi dấu ngắt từ một mục): xoá lùi qua dấu ngắt thì lấy lại từ trước để gõ tiếp.
     history: Vec<WordState>,
+    /// Dạng còn lại của từ đang gõ (sau khi bấm phím khôi phục).
+    alt: Option<String>,
+    /// Dấu ngắt vừa gõ (nếu chưa gõ gì thêm) — phím khôi phục chỉ sửa từ trước khi đó là một dấu cách.
+    last_sep: Option<char>,
 }
 
 /// Trạng thái đầy đủ của một từ, để khôi phục khi người dùng xoá lùi qua dấu cách.
@@ -493,6 +528,8 @@ struct WordState {
     out: String,
     literal_only: bool,
     last: Option<Transformed>,
+    /// Dạng còn lại của từ để phím khôi phục đổi qua lại (vd "ít" ⇄ "its", "test" ⇄ "tét").
+    alt: Option<String>,
 }
 
 /// Giới hạn số từ nhớ được để xoá lùi về.
@@ -511,11 +548,10 @@ impl Engine {
         if !self.vietnamese {
             return false;
         }
-        match self.opts.method {
-            InputMethod::Telex => matches!(c, '[' | ']' | '{' | '}'),
-            InputMethod::SimpleTelex => false,
-            InputMethod::Vni => c.is_ascii_digit() && !self.keys.is_empty(),
-        }
+        // Phím dấu không phải chữ (số VNI, dấu câu VIQR...) chỉ thuộc về từ khi đã có chữ trước đó;
+        // riêng Telex [ ] luôn là chữ (ơ ư).
+        is_mark_char(self.opts.method, self.opts.km(), c)
+            && (!self.keys.is_empty() || matches!(self.opts.method, InputMethod::Telex | InputMethod::Custom))
     }
 
     /// Chữ đang hiển thị của từ hiện tại.
@@ -531,6 +567,8 @@ impl Engine {
             typed
         };
         self.sentence.word_started();
+        self.last_sep = None;
+        self.alt = None;
         self.keys.push(c);
         let new = if !self.vietnamese || self.literal_only {
             let mut s = self.out.clone();
@@ -555,6 +593,8 @@ impl Engine {
     pub fn backspace(&mut self) {
         // Xoá lùi: không còn chắc đang ở đầu câu.
         self.sentence.word_started();
+        self.last_sep = None;
+        self.alt = None;
         if self.out.is_empty() {
             // Từ hiện tại đã rỗng: phím xoá này xoá dấu ngắt từ (dấu cách, dấu câu) trước đó →
             // con trỏ quay về cuối từ trước: lấy lại trạng thái của từ đó để gõ tiếp / sửa dấu.
@@ -572,7 +612,7 @@ impl Engine {
         let fallback = self.literal_only
             || !self.vietnamese
             || self.last.as_ref().is_some_and(|t| t.raw_fallback || t.literal);
-        let rebuilt = if fallback { None } else { encode(&self.out, self.opts.method) };
+        let rebuilt = if fallback { None } else { encode_with(&self.out, self.opts.method, self.opts.km()) };
         match rebuilt {
             Some(keys) if transform(&keys, &self.opts).text == self.out => {
                 self.keys = keys;
@@ -615,10 +655,13 @@ impl Engine {
                 out: std::mem::take(&mut self.out),
                 literal_only: self.literal_only,
                 last: self.last.take(),
+                alt: self.alt.take(),
             }
         } else {
             // Đã đổi thành từ khác (trả phím gốc, gõ tắt): gõ tiếp chỉ nối thêm chữ thường.
-            WordState { keys: text.chars().collect(), out: text, literal_only: true, last: None }
+            // Nhớ dạng cũ để phím khôi phục đổi lại được ("test" → "tét", "việt nam" → "vn").
+            let alt = Some(self.out.clone());
+            WordState { keys: text.chars().collect(), out: text, literal_only: true, last: None, alt }
         };
         self.reset_word();
         if self.history.len() >= HISTORY_MAX {
@@ -639,11 +682,13 @@ impl Engine {
         self.reset_word();
         self.history.clear();
         self.sentence.clear();
+        self.last_sep = None;
     }
 
     /// Báo dấu ngắt từ vừa gõ (gọi sau `end_word`): ' ', '.', '?', '!', '\n' (Enter)... — để biết đầu câu.
     pub fn separator(&mut self, c: char) {
         self.sentence.separator(c);
+        self.last_sep = Some(c);
     }
 
     /// Vừa kết thúc một câu (". " "? " "! "): chữ gõ tiếp theo là đầu câu mới.
@@ -657,6 +702,7 @@ impl Engine {
         self.out.clear();
         self.literal_only = false;
         self.last = None;
+        self.alt = None;
     }
 
     fn restore_word(&mut self, w: WordState) {
@@ -664,5 +710,53 @@ impl Engine {
         self.out = w.out;
         self.literal_only = w.literal_only;
         self.last = w.last;
+        self.alt = w.alt;
+    }
+
+    /// Phím khôi phục: đổi từ đang gõ (hoặc từ vừa gõ xong, ngay sau một dấu cách) qua lại giữa
+    /// dạng tiếng Việt và đúng các phím đã bấm: "its" → "ít" → khôi phục → "its"; "test" (đã giữ
+    /// tiếng Anh) → khôi phục → "tét". Trả về phép sửa, hoặc `None` nếu không có gì để đổi.
+    pub fn restore(&mut self) -> Option<Edit> {
+        if !self.out.is_empty() {
+            let target = match self.alt.take() {
+                Some(a) => a,
+                None => {
+                    let raw: String = self.keys.iter().collect();
+                    if raw == self.out {
+                        return None;
+                    }
+                    raw
+                }
+            };
+            let edit = diff(&self.out, &target);
+            self.alt = Some(std::mem::replace(&mut self.out, target));
+            self.keys = self.out.chars().collect();
+            self.literal_only = true;
+            self.last = None;
+            return Some(edit);
+        }
+        if self.last_sep != Some(' ') {
+            return None;
+        }
+        let w = self.history.last_mut()?;
+        if w.out.is_empty() {
+            return None;
+        }
+        let target = match w.alt.take() {
+            Some(a) => a,
+            None => {
+                let raw: String = w.keys.iter().collect();
+                if raw == w.out {
+                    return None;
+                }
+                raw
+            }
+        };
+        let edit = Edit { delete: format!("{} ", w.out), insert: format!("{target} ") };
+        w.alt = Some(std::mem::replace(&mut w.out, target));
+        w.keys = w.out.chars().collect();
+        w.literal_only = true;
+        w.last = None;
+        Some(edit)
     }
 }

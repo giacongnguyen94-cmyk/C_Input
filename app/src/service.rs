@@ -24,7 +24,9 @@ use windows_sys::Win32::UI::WindowsAndMessaging::*;
 use crate::config::{self, Config, Method, SwitchKey};
 use crate::password;
 use crate::ai;
-use crate::win::{self, WM_CINPUT_CONVERT_CLIPBOARD, WM_CINPUT_PASSWORD, WM_CINPUT_RELOAD, WM_CINPUT_TRANSLATED, wide};
+use crate::win::{
+    self, WM_CINPUT_CONVERT_CLIPBOARD, WM_CINPUT_PASSWORD, WM_CINPUT_RELOAD, WM_CINPUT_TRANSLATED, WM_CINPUT_UPDATE, wide,
+};
 
 /// Đánh dấu phím do chính C_Input gửi để hook bỏ qua.
 const MAGIC: usize = 0x4349_4E50; // "CINP"
@@ -339,7 +341,9 @@ impl Service {
             0x30..=0x39 if !shift => Some((b'0' + (vk - 0x30) as u8) as char),
             VK_OEM_4 => Some(if shift { '{' } else { '[' }),
             VK_OEM_6 => Some(if shift { '}' } else { ']' }),
-            _ => None,
+            // Dấu câu: phím dấu của VIQR / kiểu gõ tự định nghĩa (nếu không thì là dấu ngắt từ).
+            VK_SPACE | VK_RETURN | VK_TAB => None,
+            _ => typed_char(vk, shift),
         };
         if let Some(c) = ch {
             if self.engine.is_word_char(c) {
@@ -395,6 +399,17 @@ impl Service {
                     None => false,
                 }
             }
+            VK_ESCAPE if self.cfg.restore_key => match self.engine.restore() {
+                Some(edit) => {
+                    self.typed_apply(&edit);
+                    self.send(&edit, None);
+                    true
+                }
+                None => {
+                    self.reset_all();
+                    false
+                }
+            },
             _ => {
                 self.reset_all();
                 false
@@ -420,9 +435,29 @@ impl Service {
             inputs.push(key_input(VK_BACK, 0x0E, 0));
             inputs.push(key_input(VK_BACK, 0x0E, KEYEVENTF_KEYUP));
         }
-        for unit in text.encode_utf16() {
-            inputs.push(key_input(0, unit, KEYEVENTF_UNICODE));
-            inputs.push(key_input(0, unit, KEYEVENTF_UNICODE | KEYEVENTF_KEYUP));
+        let via_clipboard = !text.is_empty() && self.cfg.uses_clipboard(&self.cur_exe);
+        if via_clipboard {
+            // Phần mềm cũ không nhận ký tự Unicode từ phím ảo: dán chữ qua clipboard rồi trả lại
+            // nội dung clipboard cũ của người dùng.
+            let saved = win::clipboard_text(self.hwnd);
+            if win::set_clipboard_text(self.hwnd, &text) {
+                inputs.push(key_input(VK_CONTROL, 0, 0));
+                inputs.push(key_input(VK_V, 0, 0));
+                inputs.push(key_input(VK_V, 0, KEYEVENTF_KEYUP));
+                inputs.push(key_input(VK_CONTROL, 0, KEYEVENTF_KEYUP));
+                let hwnd = self.hwnd as isize;
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(400));
+                    if let Some(old) = saved {
+                        win::set_clipboard_text(hwnd as HWND, &old);
+                    }
+                });
+            }
+        } else {
+            for unit in text.encode_utf16() {
+                inputs.push(key_input(0, unit, KEYEVENTF_UNICODE));
+                inputs.push(key_input(0, unit, KEYEVENTF_UNICODE | KEYEVENTF_KEYUP));
+            }
         }
         if let Some(kb) = then_key {
             let ext = if kb.flags & LLKHF_EXTENDED != 0 { KEYEVENTF_EXTENDEDKEY } else { 0 };
@@ -650,6 +685,32 @@ fn separator_char(vk: VIRTUAL_KEY, shift: bool) -> char {
         (VK_OEM_6, false) => ']',
         _ => '\0',
     }
+}
+
+/// Tự kiểm tra bản mới trên GitHub (nếu người dùng bật): 30 giây sau khi khởi động, rồi mỗi ngày.
+/// Chỉ báo một lần cho mỗi phiên bản; không tự cài.
+fn start_update_checker(hwnd: HWND) {
+    let hwnd = hwnd as isize;
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(30));
+        let mut told = String::new();
+        loop {
+            if Config::load().auto_update {
+                if let Ok(Some(r)) = crate::update::check() {
+                    if r.version != told {
+                        told = r.version.clone();
+                        let boxed = Box::into_raw(Box::new(r.version));
+                        unsafe {
+                            if PostMessageW(hwnd as HWND, crate::win::WM_CINPUT_UPDATE, 0, boxed as isize) == 0 {
+                                drop(Box::from_raw(boxed));
+                            }
+                        }
+                    }
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_secs(24 * 3600));
+        }
+    });
 }
 
 /// Vị trí (điểm logic, đã chia tỉ lệ DPI) cho cửa sổ dịch: cạnh con trỏ, không tràn khỏi màn hình.
@@ -983,6 +1044,16 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
             with_state(|s| s.reload());
             0
         }
+        WM_CINPUT_UPDATE => {
+            let v = unsafe { Box::from_raw(lparam as *mut String) };
+            with_state(|s| {
+                s.notify(
+                    &format!("Đã có C_Input {v}"),
+                    "Mở Cài đặt → Giới thiệu → Cập nhật để cài bản mới (kiểm tra SHA-256 trước khi cài).",
+                )
+            });
+            0
+        }
         WM_CINPUT_TRANSLATED => {
             let boxed = unsafe { Box::from_raw(lparam as *mut (u64, Result<String, String>)) };
             let (id, result) = *boxed;
@@ -1120,6 +1191,8 @@ pub fn run(replace: bool) {
         STATE.with(|s| *s.borrow_mut() = Some(svc));
 
         with_state(|s| s.install_hooks());
+        crate::update::cleanup_old();
+        start_update_checker(hwnd);
         password::start(hwnd);
         SetTimer(hwnd, TIMER_WATCHDOG, 1000, None);
         let fg_hook = SetWinEventHook(

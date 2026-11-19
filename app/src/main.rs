@@ -9,6 +9,7 @@ mod ai;
 mod config;
 mod password;
 mod popup;
+mod update;
 mod service;
 mod settings;
 mod ui;

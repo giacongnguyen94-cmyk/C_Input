@@ -13,16 +13,21 @@ pub enum Method {
     Telex,
     Vni,
     SimpleTelex,
+    Viqr,
+    /// Kiểu gõ tự định nghĩa: bảng phím ở %APPDATA%\C_Input\keymap.txt (định dạng UniKey).
+    Custom,
 }
 
 impl Method {
-    pub const ALL: [Method; 3] = [Method::Telex, Method::Vni, Method::SimpleTelex];
+    pub const ALL: [Method; 5] = [Method::Telex, Method::Vni, Method::Viqr, Method::SimpleTelex, Method::Custom];
 
     pub fn to_core(self) -> InputMethod {
         match self {
             Method::Telex => InputMethod::Telex,
             Method::Vni => InputMethod::Vni,
             Method::SimpleTelex => InputMethod::SimpleTelex,
+            Method::Viqr => InputMethod::Viqr,
+            Method::Custom => InputMethod::Custom,
         }
     }
 
@@ -73,6 +78,16 @@ pub struct Config {
     pub read_enabled: bool,
     /// Ngôn ngữ đọc (dịch đoạn bôi đen sang), vd "Vietnamese".
     pub read_lang: String,
+    /// Gõ dấu tự do ("tiengs" → tiếng). Tắt: dấu phụ phải gõ ngay sau chữ cần dấu.
+    pub free_marking: bool,
+    /// Phím Esc đổi từ vừa gõ qua lại giữa tiếng Việt và đúng các phím đã bấm.
+    pub restore_key: bool,
+    /// Ứng dụng nhận chữ qua clipboard (dán) thay vì phím ảo — cho phần mềm cũ không nhận Unicode.
+    pub clipboard_apps: Vec<String>,
+    /// Tự kiểm tra bản mới trên GitHub (chỉ thông báo, không tự cài).
+    pub auto_update: bool,
+    /// Ngôn ngữ giao diện: "vi" hoặc "en".
+    pub ui_lang: String,
     pub switch_key: SwitchKey,
     pub beep: bool,
     pub macro_enabled: bool,
@@ -107,6 +122,11 @@ impl Default for Config {
             gemini_model: crate::ai::DEFAULT_MODEL.to_string(),
             read_enabled: true,
             read_lang: "Vietnamese".to_string(),
+            free_marking: true,
+            restore_key: true,
+            clipboard_apps: Vec::new(),
+            auto_update: true,
+            ui_lang: "vi".to_string(),
             switch_key: SwitchKey::CtrlShift,
             beep: false,
             macro_enabled: true,
@@ -139,6 +159,8 @@ impl Config {
             modern_tone: self.modern_tone,
             spell_check: self.spell_check,
             english_words: self.english_words,
+            free_marking: self.free_marking,
+            keymap: (self.method == Method::Custom).then(|| std::sync::Arc::new(load_keymap())),
         }
     }
 
@@ -155,6 +177,10 @@ impl Config {
         let tmp = config_path().with_extension("tmp");
         std::fs::write(&tmp, text)?;
         std::fs::rename(tmp, config_path())
+    }
+
+    pub fn uses_clipboard(&self, exe: &str) -> bool {
+        self.clipboard_apps.iter().any(|a| a.eq_ignore_ascii_case(exe))
     }
 
     pub fn is_excluded(&self, exe: &str) -> bool {
@@ -234,4 +260,22 @@ pub fn ensure_english_file() -> std::io::Result<()> {
         std::fs::write(english_path(), ENGLISH_HEADER)?;
     }
     Ok(())
+}
+
+pub fn keymap_path() -> PathBuf {
+    data_dir().join("keymap.txt")
+}
+
+/// Bảng phím của kiểu gõ tự định nghĩa (chưa có file thì dùng bảng giống Telex).
+pub fn load_keymap() -> cinput_core::KeyMap {
+    std::fs::read_to_string(keymap_path())
+        .map(|t| cinput_core::KeyMap::parse(&t))
+        .ok()
+        .filter(|m| !m.is_empty())
+        .unwrap_or_else(cinput_core::KeyMap::telex_like)
+}
+
+pub fn save_keymap(m: &cinput_core::KeyMap) -> std::io::Result<()> {
+    std::fs::create_dir_all(data_dir())?;
+    std::fs::write(keymap_path(), m.serialize())
 }

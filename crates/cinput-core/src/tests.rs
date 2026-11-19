@@ -26,6 +26,11 @@ impl Doc {
             if c == '\u{8}' {
                 self.engine.backspace();
                 self.text.pop();
+            } else if c == '\u{1b}' {
+                // Phím khôi phục (Esc).
+                if let Some(e) = self.engine.restore() {
+                    self.apply(&e);
+                }
             } else if self.engine.is_word_char(c) {
                 match self.engine.key(c) {
                     KeyOutcome::Pass => self.text.push(c),
@@ -47,7 +52,7 @@ impl Doc {
 }
 
 fn opts(method: InputMethod, modern: bool) -> Options {
-    Options { method, modern_tone: modern, spell_check: true, english_words: true }
+    Options { method, modern_tone: modern, spell_check: true, english_words: true, ..Default::default() }
 }
 
 fn check(method: InputMethod, modern: bool, cases: &[(&str, &str)]) {
@@ -288,7 +293,7 @@ fn english_dictionary_old_tone_style() {
 #[test]
 fn english_list_independent_of_spell_check() {
     // Tắt kiểm tra chính tả vẫn giữ được "test"; tắt danh sách thì ra "tét".
-    let o = Options { method: InputMethod::Telex, modern_tone: false, spell_check: false, english_words: true };
+    let o = Options { method: InputMethod::Telex, modern_tone: false, spell_check: false, english_words: true, ..Default::default() };
     let mut d = Doc::new(o.clone());
     // "windows" có trong danh sách; "wiki" thì không, và không còn tự trả phím vì đã tắt chính tả.
     assert_eq!(d.type_str("test windows wiki "), "test windows ưiki ");
@@ -350,4 +355,99 @@ fn auto_capitalize_sentences() {
     d.type_str("xong. ");
     d.engine.reset();
     assert_eq!(d.type_str("tieeps"), "xong. tiếp");
+}
+
+#[test]
+fn restore_key() {
+    let cases = [
+        // Từ đang gõ: về đúng phím đã bấm, bấm lần nữa thì quay lại.
+        ("its\u{1b}", "its"),
+        ("its\u{1b}\u{1b}", "ít"),
+        ("tieesng\u{1b}", "tieesng"),
+        // Từ vừa xong, ngay sau một dấu cách.
+        ("its \u{1b}", "its "),
+        ("has \u{1b}is \u{1b}", "has is "),
+        ("this is \u{1b}a test", "thí is a test"),
+        // Từ đã tự giữ tiếng Anh → đổi sang tiếng Việt.
+        ("test \u{1b}", "tét "),
+        // Không có gì để đổi: không làm gì.
+        ("abc \u{1b}", "abc "),
+        ("its  \u{1b}", "ít  "), // hai dấu cách: không sửa từ trước
+        // Gõ tiếp sau khi khôi phục: nối chữ thường.
+        ("its\u{1b}y", "itsy"),
+    ];
+    for (input, expected) in cases {
+        let mut d = Doc::new(opts(InputMethod::Telex, true));
+        assert_eq!(d.type_str(input), expected, "gõ {input:?}");
+    }
+    // Hoàn tác gõ tắt.
+    let mut d = Doc::new(opts(InputMethod::Telex, true));
+    d.macros = Some(MacroTable::parse("vn:việt nam\n", true));
+    assert_eq!(d.type_str("vn \u{1b}"), "vn ");
+}
+
+#[test]
+fn viqr_method() {
+    check(
+        InputMethod::Viqr,
+        true,
+        &[
+            ("Vie^.t Nam", "Việt Nam"),
+            ("tie^'ng", "tiếng"),
+            ("ddu+o+`ng", "đường"),
+            ("a(n", "ăn"),
+            ("ho?i", "hỏi"),
+            ("ho+?i", "hởi"),
+            ("nguo+`i", "người"),
+            ("bo'-", "bo"),
+        ],
+    );
+}
+
+#[test]
+fn custom_keymap_method() {
+    use crate::method::{KeyAction, KeyMap};
+    // Bảng phím lấy từ keymap.txt của UniKey (giống Telex) + phím [ ] chèn ơ ư + 6 = mũ.
+    let mut km = KeyMap::telex_like();
+    km.set('[', Some(KeyAction::Letter('ơ')));
+    km.set('6', Some(KeyAction::RoofAll));
+    km.set('w', Some(KeyAction::TelexW));
+    let o = Options { method: InputMethod::Custom, keymap: Some(std::sync::Arc::new(km)), ..Default::default() };
+    for (input, expected) in [
+        ("tieesng", "tiếng"),
+        ("dduwowcj", "được"),
+        ("w", "ư"),
+        ("ww", "w"),
+        ("tie6ng", "tiêng"),
+        ("[", "ơ"),
+        ("windows", "windows"),
+    ] {
+        let mut d = Doc::new(o.clone());
+        assert_eq!(d.type_str(input), expected, "gõ {input:?}");
+    }
+    // Xoá lùi vẫn dựng lại được dãy phím với bảng phím riêng.
+    let mut d = Doc::new(o);
+    assert_eq!(d.type_str("tieesng\u{8}gf"), "tiềng");
+}
+
+#[test]
+fn strict_marking() {
+    // Tắt gõ dấu tự do: dấu phụ chỉ áp cho chữ vừa gõ; dấu thanh vẫn tự do.
+    let o = Options { free_marking: false, ..Default::default() };
+    for (input, expected) in [
+        ("tieengs", "tiếng"),
+        ("tienge", "tienge"), // e ở cuối không còn thành mũ cho chữ e phía trước
+        ("dod", "dod"),
+        ("ddo", "đo"),
+        ("thuongw", "thuongw"),
+        ("thuowng", "thương"),
+        ("hoaf", "hoà"),
+        ("tiengs", "tiéngs"),
+    ] {
+        let mut d = Doc::new(o.clone());
+        let got = d.type_str(input).to_string();
+        // "tiengs": ie không có mũ nên không phải tiếng Việt hợp lệ → trả phím gốc.
+        let expected = if input == "tiengs" { "tiengs" } else { expected };
+        assert_eq!(got, expected, "gõ {input:?}");
+    }
 }

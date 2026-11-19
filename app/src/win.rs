@@ -29,6 +29,8 @@ pub const WM_CINPUT_CONVERT_CLIPBOARD: u32 = WM_APP + 11;
 pub const WM_CINPUT_PASSWORD: u32 = WM_APP + 12;
 /// Luồng dịch trả kết quả (lParam = Box<(u64, Result<String, String>)>).
 pub const WM_CINPUT_TRANSLATED: u32 = WM_APP + 13;
+/// Luồng kiểm tra cập nhật báo có bản mới (lParam = Box<String> phiên bản).
+pub const WM_CINPUT_UPDATE: u32 = WM_APP + 14;
 
 const RUN_KEY: &str = "Software\\Microsoft\\Windows\\CurrentVersion\\Run";
 const RUN_VALUE: &str = "C_Input";
@@ -258,4 +260,42 @@ pub fn shell_open(path: &std::path::Path) {
     unsafe {
         ShellExecuteW(null_mut(), op.as_ptr(), p.as_ptr(), std::ptr::null(), std::ptr::null(), SW_SHOWNORMAL);
     }
+}
+
+/// Hộp thoại chọn file của Windows. `save = true`: hộp thoại "Lưu thành" (hỏi trước khi ghi đè).
+/// `filter`: các cặp (mô tả, mẫu), vd [("Văn bản (*.txt)", "*.txt")].
+pub fn file_dialog(save: bool, title: &str, filter: &[(&str, &str)], default_name: &str) -> Option<std::path::PathBuf> {
+    use windows_sys::Win32::UI::Controls::Dialogs::*;
+    let mut f: Vec<u16> = Vec::new();
+    for (desc, pat) in filter {
+        f.extend(desc.encode_utf16());
+        f.push(0);
+        f.extend(pat.encode_utf16());
+        f.push(0);
+    }
+    f.push(0);
+    let title = wide(title);
+    let ext = wide("txt");
+    let mut buf = vec![0u16; 1024];
+    for (i, u) in default_name.encode_utf16().take(1000).enumerate() {
+        buf[i] = u;
+    }
+    unsafe {
+        let mut ofn: OPENFILENAMEW = std::mem::zeroed();
+        ofn.lStructSize = size_of::<OPENFILENAMEW>() as u32;
+        ofn.lpstrFilter = f.as_ptr();
+        ofn.lpstrFile = buf.as_mut_ptr();
+        ofn.nMaxFile = buf.len() as u32;
+        ofn.lpstrTitle = title.as_ptr();
+        ofn.lpstrDefExt = ext.as_ptr();
+        ofn.Flags = OFN_NOCHANGEDIR
+            | OFN_PATHMUSTEXIST
+            | if save { OFN_OVERWRITEPROMPT } else { OFN_FILEMUSTEXIST };
+        let ok = if save { GetSaveFileNameW(&mut ofn) } else { GetOpenFileNameW(&mut ofn) };
+        if ok == 0 {
+            return None;
+        }
+    }
+    let n = buf.iter().position(|&c| c == 0).unwrap_or(buf.len());
+    Some(std::path::PathBuf::from(String::from_utf16_lossy(&buf[..n])))
 }
