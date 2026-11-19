@@ -120,6 +120,7 @@ impl Service {
     }
 
     fn apply_config(&mut self) {
+        REMOTE_KEYS.store(self.cfg.remote_keys, std::sync::atomic::Ordering::Relaxed);
         self.engine.opts = self.cfg.engine_options();
         self.reset_all();
         self.macros = config::load_macros(self.cfg.macro_auto_case);
@@ -345,6 +346,8 @@ impl Service {
             VK_OEM_6 => Some(if shift { '}' } else { ']' }),
             // Dấu câu: phím dấu của VIQR / kiểu gõ tự định nghĩa (nếu không thì là dấu ngắt từ).
             VK_SPACE | VK_RETURN | VK_TAB => None,
+            // Phần mềm điều khiển từ xa / bàn phím ảo có thể gửi thẳng ký tự Unicode (VK_PACKET).
+            VK_PACKET => char::from_u32(kb.scanCode).filter(|c| !c.is_control()),
             _ => typed_char(vk, shift),
         };
         if let Some(c) = ch {
@@ -383,9 +386,10 @@ impl Service {
                     // Enter có thể đã gửi tin nhắn, Tab chuyển ô: không xoá lùi về từ trước được nữa.
                     self.engine.forget_history();
                 }
-                let sep = separator_char(vk, shift);
+                let packet = if vk == VK_PACKET { ch } else { None };
+                let sep = packet.unwrap_or_else(|| separator_char(vk, shift));
                 self.engine.separator(sep);
-                match typed_char(vk, shift) {
+                match packet.or_else(|| typed_char(vk, shift)) {
                     // Enter / Tab / phím lạ: không theo dõi tiếp được (Enter có thể đã gửi tin nhắn).
                     Some(c) if !matches!(vk, VK_RETURN | VK_TAB) => self.typed.push(c),
                     _ => self.forget_typed(),
@@ -461,7 +465,9 @@ impl Service {
                 inputs.push(key_input(0, unit, KEYEVENTF_UNICODE | KEYEVENTF_KEYUP));
             }
         }
-        if let Some(kb) = then_key {
+        if let Some(kb) = then_key.filter(|kb| kb.vkCode == VK_PACKET as u32) {
+            inputs.push(key_input(0, kb.scanCode as u16, KEYEVENTF_UNICODE));
+        } else if let Some(kb) = then_key {
             let ext = if kb.flags & LLKHF_EXTENDED != 0 { KEYEVENTF_EXTENDEDKEY } else { 0 };
             inputs.push(key_input(kb.vkCode as VIRTUAL_KEY, kb.scanCode as u16, ext));
         }
@@ -813,6 +819,9 @@ fn copy_wstr(dst: &mut [u16], s: &str) {
 
 // ---------------------------------------------------------------- hook
 
+/// Xử lý cả phím do chương trình khác gửi (điều khiển từ xa) — theo `Config::remote_keys`.
+static REMOTE_KEYS: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(true);
+
 /// Chỉ dùng khi kiểm thử tự động (CINPUT_TEST_INJECTED=1): xử lý cả phím do chương trình khác gửi.
 fn accept_injected() -> bool {
     static V: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
@@ -843,7 +852,10 @@ unsafe extern "system" fn keyboard_proc(code: i32, wparam: WPARAM, lparam: LPARA
     if code == HC_ACTION as i32 {
         touch_hook();
         let kb = unsafe { &*(lparam as *const KBDLLHOOKSTRUCT) };
-        if kb.dwExtraInfo != MAGIC && (kb.flags & LLKHF_INJECTED == 0 || accept_injected()) {
+        // Phím do chương trình khác gửi (UltraViewer, TeamViewer, AnyDesk, bàn phím ảo…) cũng được xử lý,
+        // trừ phím do chính C_Input gửi (đánh dấu MAGIC) hoặc khi người dùng tắt tuỳ chọn này.
+        let injected = kb.flags & LLKHF_INJECTED != 0;
+        if kb.dwExtraInfo != MAGIC && (!injected || accept_injected() || REMOTE_KEYS.load(std::sync::atomic::Ordering::Relaxed)) {
             let msg = wparam as u32;
             let down = msg == WM_KEYDOWN || msg == WM_SYSKEYDOWN;
             if with_state(|s| s.on_key(kb, down)).unwrap_or(false) {
@@ -1158,6 +1170,7 @@ pub fn run(replace: bool) {
         engine.auto_capitalize = cfg.auto_capitalize;
         let api_key = ai::unprotect_key(&cfg.gemini_key);
         crate::i18n::set_lang(&cfg.ui_lang);
+        REMOTE_KEYS.store(cfg.remote_keys, std::sync::atomic::Ordering::Relaxed);
         engine.vietnamese = cfg.vietnamese;
         let svc = Service {
             hwnd,

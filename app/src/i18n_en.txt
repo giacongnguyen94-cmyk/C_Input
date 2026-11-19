@@ -269,3 +269,5 @@ NCR thập phân	NCR decimal
 NCR thập lục phân	NCR hex
 UTF-8 Literal (sửa lỗi font)	UTF-8 Literal (fix garbled text)
 Tổ hợp	Combining
+Gõ qua phần mềm điều khiển từ xa	Typing through remote control
+Bỏ dấu cả với phím gửi từ UltraViewer, TeamViewer, AnyDesk, bàn phím ảo… Tắt nếu dùng phần mềm tự gõ chữ (AutoHotkey, macro) mà không muốn C_Input bỏ dấu vào.	Also add accents to keys sent by UltraViewer, TeamViewer, AnyDesk, on-screen keyboards… Turn off if you use software that types for you (AutoHotkey, macros) and don't want C_Input to accent it.

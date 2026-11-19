@@ -84,6 +84,8 @@ pub struct Config {
     pub restore_key: bool,
     /// Ứng dụng nhận chữ qua clipboard (dán) thay vì phím ảo — cho phần mềm cũ không nhận Unicode.
     pub clipboard_apps: Vec<String>,
+    /// Nhận phím do phần mềm điều khiển từ xa / bàn phím ảo gửi tới.
+    pub remote_keys: bool,
     /// Tự kiểm tra bản mới trên GitHub (chỉ thông báo, không tự cài).
     pub auto_update: bool,
     /// Ngôn ngữ giao diện: "vi" hoặc "en".
@@ -125,6 +127,7 @@ impl Default for Config {
             free_marking: true,
             restore_key: true,
             clipboard_apps: Vec::new(),
+            remote_keys: true,
             auto_update: true,
             ui_lang: "vi".to_string(),
             switch_key: SwitchKey::CtrlShift,

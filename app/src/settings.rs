@@ -823,6 +823,15 @@ impl SettingsApp {
                     ui::toggle(ui, &mut cfg.browser_fix);
                 },
             );
+            ui::row_sep(ui);
+            ui::row(
+                ui,
+                "Gõ qua phần mềm điều khiển từ xa",
+                "Bỏ dấu cả với phím gửi từ UltraViewer, TeamViewer, AnyDesk, bàn phím ảo… Tắt nếu dùng phần mềm                  tự gõ chữ (AutoHotkey, macro) mà không muốn C_Input bỏ dấu vào.",
+                |ui| {
+                    ui::toggle(ui, &mut cfg.remote_keys);
+                },
+            );
         });
 
         let svc = win::find_service_window();
