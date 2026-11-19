@@ -8,6 +8,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 static ENGLISH: AtomicBool = AtomicBool::new(false);
 const EN_TEXT: &str = include_str!("i18n_en.txt");
 
+/// Trong file từ điển, TAB thật ngăn cách hai cột; TAB / xuống dòng bên trong chuỗi ghi là `\t` / `\n`.
+fn unescape(s: &str) -> &'static str {
+    let owned = s.replace("\\t", "\t").replace("\\n", "\n");
+    Box::leak(owned.into_boxed_str())
+}
+
 fn table() -> &'static HashMap<&'static str, &'static str> {
     static T: OnceLock<HashMap<&'static str, &'static str>> = OnceLock::new();
     T.get_or_init(|| {
@@ -15,7 +21,7 @@ fn table() -> &'static HashMap<&'static str, &'static str> {
             .lines()
             .filter(|l| !l.starts_with('#'))
             .filter_map(|l| l.split_once('\t'))
-            .map(|(vi, en)| (vi, en))
+            .map(|(vi, en)| (unescape(vi), unescape(en)))
             .collect()
     })
 }
@@ -63,6 +69,13 @@ mod tests {
         assert_eq!(fill("Đã nhập {} gõ tắt ({})", &[&5, &"ok"]), "Đã nhập 5 gõ tắt (ok)");
         set_lang("vi");
         assert_eq!(t("Bộ gõ"), "Bộ gõ");
+    }
+
+    #[test]
+    fn escaped_tab_and_newline_keys() {
+        assert_eq!(table().get("Gõ tiếng Việt\t{}"), Some(&"Vietnamese typing\t{}"));
+        assert_eq!(table().get("C_Input — Tiếng Việt\n{} · {}"), Some(&"C_Input — Vietnamese\n{} · {}"));
+        assert_eq!(table().get("Bộ gõ"), Some(&"Typing"));
     }
 
     #[test]

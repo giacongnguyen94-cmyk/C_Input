@@ -36,7 +36,7 @@ impl PopupApp {
     fn translate(&mut self) {
         let Some(key) = self.key.clone() else {
             if !fake() {
-                self.result = Some(Err("Chưa có API key Gemini — mở Cài đặt → Dịch AI để thêm.".to_string()));
+                self.result = Some(Err(crate::i18n::t("Chưa có API key Gemini — mở Cài đặt → Dịch AI để thêm.").to_string()));
                 return;
             }
             return self.spawn(String::new());
@@ -114,7 +114,7 @@ impl eframe::App for PopupApp {
                 // Thanh tiêu đề: kéo để di chuyển cửa sổ.
                 let header = ui.horizontal(|ui| {
                     ui.label(ui::icon_text(icon::GLOBE, 15.0, ui::ACCENT_HI));
-                    ui.label(ui::title("Dịch sang", 14.5));
+                    ui.label(ui::title(crate::i18n::t("Dịch sang"), 14.5));
                     let before = self.cfg.read_lang.clone();
                     crate::settings::language_picker(ui, "read_lang", &mut self.cfg.read_lang, &mut self.search);
                     if self.cfg.read_lang != before {
@@ -122,7 +122,7 @@ impl eframe::App for PopupApp {
                         self.translate();
                     }
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        if ui::icon_button(ui, "\u{E8BB}", ui::DANGER).on_hover_text("Đóng (Esc)").clicked() {
+                        if ui::icon_button(ui, "\u{E8BB}", ui::DANGER).on_hover_text(crate::i18n::t("Đóng (Esc)")).clicked() {
                             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                         }
                     });
@@ -147,7 +147,7 @@ impl eframe::App for PopupApp {
                     None => {
                         ui.horizontal(|ui| {
                             ui.spinner();
-                            ui.label(ui::muted(&format!("Đang dịch sang {}…", ai::language_label(&self.cfg.read_lang))));
+                            ui.label(ui::muted(&crate::i18n::fill(crate::i18n::t("Đang dịch sang {}…"), &[&ai::language_label(&self.cfg.read_lang)])));
                         });
                     }
                     Some(Ok(text)) => {
@@ -165,7 +165,7 @@ impl eframe::App for PopupApp {
                             ui.label(ui::icon_text(icon::WARNING, 13.0, ui::DANGER));
                             ui.add(egui::Label::new(RichText::new(e).color(ui::DANGER)).wrap());
                         });
-                        if self.key.is_none() && ui::button(ui, Some(icon::GLOBE), "Mở cài đặt Dịch AI").clicked() {
+                        if self.key.is_none() && ui::button(ui, Some(icon::GLOBE), crate::i18n::t("Mở cài đặt Dịch AI")).clicked() {
                             win::spawn_self(&["--settings", "ai"]);
                             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                         }
@@ -178,7 +178,7 @@ impl eframe::App for PopupApp {
                         let ok = matches!(self.result, Some(Ok(_)));
                         let copied = self.copied_at.is_some_and(|t| t.elapsed() < Duration::from_millis(1500));
                         if ui
-                            .add_enabled(ok, egui::Button::new(if copied { "✓ Đã chép" } else { "Chép bản dịch" }))
+                            .add_enabled(ok, egui::Button::new(if copied { crate::i18n::t("✓ Đã chép") } else { crate::i18n::t("Chép bản dịch") }))
                             .clicked()
                         {
                             if let Some(Ok(t)) = &self.result {
@@ -186,11 +186,11 @@ impl eframe::App for PopupApp {
                                 self.copied_at = Some(Instant::now());
                             }
                         }
-                        if ui.add_enabled(!self.busy, egui::Button::new("Dịch lại")).clicked() {
+                        if ui.add_enabled(!self.busy, egui::Button::new(crate::i18n::t("Dịch lại"))).clicked() {
                             self.translate();
                         }
                         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                            ui.label(ui::muted("Esc để đóng"));
+                            ui.label(ui::muted(crate::i18n::t("Esc để đóng")));
                         });
                     });
                 });
@@ -226,6 +226,7 @@ pub fn run(args: &[String]) {
         Box::new(move |cc| {
             ui::setup(&cc.egui_ctx);
             let cfg = Config::load();
+            crate::i18n::set_lang(&cfg.ui_lang);
             let (tx, rx) = channel();
             let mut app = PopupApp {
                 key: ai::unprotect_key(&cfg.gemini_key),

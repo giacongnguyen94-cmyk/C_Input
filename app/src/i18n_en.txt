@@ -1,1 +1,271 @@
-# Bản dịch tiếng Anh của giao diện: tiếng Việt<TAB>English
+# Bản dịch tiếng Anh của giao diện: tiếng Việt<TAB>English. TAB / xuống dòng trong chuỗi ghi là \t / \n.
+Đã lưu thay đổi	Changes saved
+Không lưu được: {}	Could not save: {}
+Đã lưu bảng gõ tắt	Shortcut list saved
+Bộ gõ tiếng Việt	Vietnamese keyboard
+Bộ gõ	Typing
+Gõ tắt	Shortcuts
+Chuyển mã	Convert
+Ứng dụng	Apps
+Dịch AI	AI translate
+Giới thiệu	About
+Bộ gõ chưa chạy	Keyboard not running
+Bấm để khởi động bộ gõ nền.	Click to start the background keyboard.
+Khởi động bộ gõ	Start keyboard
+Tiếng Việt	Vietnamese
+Tiếng Anh	English
+Đang tắt gõ dấu	Accents off
+Bật/tắt gõ tiếng Việt	Turn Vietnamese typing on/off
+để chuyển	to switch
+Kiểu gõ, bảng mã và cách đặt dấu.	Input method, character set and accent placement.
+Kiểu gõ	Input method
+Telex gõ dấu bằng chữ (s f r x j), VNI bằng phím số (1–9), VIQR bằng dấu câu (a' a` a? a~ a.). Tự định nghĩa: tự gán phím, đọc được file keymap.txt của UniKey.	Telex types accents with letters (s f r x j), VNI with digits (1–9), VIQR with punctuation (a' a` a? a~ a.). User-defined: assign your own keys; reads UniKey's keymap.txt.
+Bảng mã	Character set
+Bảng mã của chữ gửi vào ứng dụng. Dùng Unicode cho hầu hết trường hợp.	Encoding of the text sent to applications. Use Unicode in almost all cases.
+Phím chuyển Anh/Việt	Switch key
+Phím tắt bật/tắt gõ tiếng Việt ở bất cứ đâu.	Shortcut to turn Vietnamese typing on/off anywhere.
+Cách đặt dấu	Accent placement
+Đặt dấu kiểu mới	Modern tone placement
+hoà, khoẻ, thuý — thay cho hòa, khỏe, thúy.	hoà, khoẻ, thuý instead of hòa, khỏe, thúy.
+Gõ dấu tự do	Free accent typing
+Gõ dấu ở bất kỳ đâu trong từ (tiengs → tiếng). Tắt: mũ, móc, trăng, đ phải gõ ngay sau chữ cần dấu (tieengs); dấu thanh vẫn gõ cuối từ được.	Type accent keys anywhere in a word (tiengs → tiếng). Off: â ơ ă đ marks must follow their letter directly (tieengs); tone keys may still come at the end.
+Phím Esc khôi phục từ	Esc restores the word
+Bấm Esc ngay sau một từ để đổi qua lại giữa tiếng Việt và đúng các phím đã gõ: its → ít → Esc → its; test → Esc → tét. Hoàn tác được cả gõ tắt.	Press Esc right after a word to switch it between Vietnamese and the exact keys you typed: its → ít → Esc → its; test → Esc → tét. Also undoes shortcuts.
+Kiểm tra chính tả	Spell check
+Không bỏ dấu vào từ sai chính tả, tự trả lại phím gốc cho từ tiếng Anh (windows, text…).	Don't accent misspelled words; give English words back their original keys (windows, text…).
+Từ tiếng Anh giữ nguyên	Keep English words
+Gõ đúng các từ như test, error, password, data… thì giữ tiếng Anh. {} từ có sẵn + {} từ của bạn. Muốn ra "tét" thì gõ "tets".	Typing words such as test, error, password, data… keeps them in English. {} built-in words + {} of yours. Type "tets" to get "tét".
+Sửa danh sách của tôi	Edit my list
+Nạp lại	Reload
+Đọc lại danh sách sau khi sửa	Read the list again after editing
+Đã nạp lại danh sách từ tiếng Anh	English word list reloaded
+Tự động	Automatic
+Tự viết hoa đầu câu	Capitalize sentences
+Chữ đầu tiên sau dấu . ? ! và khi xuống dòng tự viết hoa. Bỏ qua viết tắt (v.v., TP.), dấu ba chấm và địa chỉ web.	Capitalize the first letter after . ? ! and after a new line. Skips abbreviations (v.v., TP.), ellipses and web addresses.
+Tắt tiếng Việt trong ô mật khẩu	Turn off Vietnamese in password fields
+Khi đang nhập mật khẩu, C_Input gõ ra đúng phím đã bấm (không bỏ dấu, không gõ tắt) và biểu tượng khay chuyển sang màu xám.	While you type a password, C_Input sends exactly the keys you press (no accents, no shortcuts) and the tray icon turns grey.
+Gõ thử	Try it
+Gõ thử ở đây, ví dụ: Tie61ng Vie65t	Try typing here, e.g. Tie61ng Vie65t
+Gõ thử ở đây, ví dụ: Tieesng Vieejt	Try typing here, e.g. Tieesng Vieejt
+Hệ thống	System
+Khởi động cùng Windows	Start with Windows
+Tự chạy C_Input khi đăng nhập Windows.	Run C_Input when you sign in to Windows.
+Tiếng bíp khi chuyển chế độ	Beep when switching
+Phát âm thanh ngắn khi bật/tắt tiếng Việt.	Play a short sound when Vietnamese typing turns on or off.
+sắc	acute
+huyền	grave
+hỏi	hook
+ngã	tilde
+nặng	dot
+xoá dấu	remove tone
+Gõ một từ ngắn rồi bấm cách để thay bằng cụm từ đầy đủ.	Type a short word and press space to replace it with the full phrase.
+Tuỳ chọn	Options
+Bật gõ tắt	Enable shortcuts
+Thay từ tắt khi gõ dấu cách, dấu câu hoặc Enter.	Expand a shortcut on space, punctuation or Enter.
+Gõ tắt cả khi tắt tiếng Việt	Shortcuts in English mode too
+Vẫn thay từ tắt khi đang ở chế độ tiếng Anh.	Expand shortcuts even while Vietnamese typing is off.
+Tự viết hoa theo chữ gõ	Match capitalization
+vn → việt nam, Vn → Việt nam, VN → VIỆT NAM.	vn → việt nam, Vn → Việt nam, VN → VIỆT NAM.
+Thêm gõ tắt	Add shortcut
+Từ tắt, vd: vn	Shortcut, e.g. vn
+Nội dung thay thế, vd: Việt Nam	Replacement, e.g. Việt Nam
+  Thêm  	  Add  
+Cần nhập cả từ tắt và nội dung	Enter both the shortcut and the replacement
+Từ tắt không được chứa dấu cách hoặc dấu ':'	A shortcut cannot contain spaces or ':'
+Danh sách ({})	List ({})
+Tìm…	Search…
+Chưa có từ gõ tắt nào.	No shortcuts yet.
+Không tìm thấy.	Nothing found.
+Xoá	Delete
+Mở file gõ tắt	Open shortcut file
+Nạp lại từ file	Reload from file
+Đã nạp lại bảng gõ tắt	Shortcut list reloaded
+Nhập từ file…	Import from file…
+Thêm gõ tắt từ file UniKey / C_Input	Add shortcuts from a UniKey / C_Input file
+Bảng gõ tắt (*.txt)	Shortcut list (*.txt)
+Mọi file	All files
+Nhập bảng gõ tắt	Import shortcuts
+Đã nhập {} gõ tắt	Imported {} shortcuts
+Không đọc được file	Could not read the file
+Xuất ra file…	Export to file…
+Xuất bảng gõ tắt	Export shortcuts
+Đã xuất bảng gõ tắt	Shortcuts exported
+Không ghi được file: {}	Could not write the file: {}
+Chuyển văn bản giữa các bảng mã tiếng Việt: TCVN3, VNI, Unicode…	Convert text between Vietnamese encodings: TCVN3, VNI, Unicode…
+Từ	From
+Sang	To
+Đảo chiều	Swap
+Bỏ dấu	Remove accents
+Tiếng Việt → Tieng Viet	Tiếng Việt → Tieng Viet
+Chữ hoa / thường	Letter case
+Giữ nguyên	Keep
+HOA	UPPER
+thường	lower
+Văn bản	Text
+Nguồn	Source
+Dán văn bản cần chuyển vào đây…	Paste the text to convert here…
+Kết quả	Result
+Dán từ clipboard	Paste from clipboard
+  Chuyển mã  	  Convert  
+Chép kết quả	Copy result
+Đã chép kết quả vào clipboard	Result copied to the clipboard
+Chuyển nhanh clipboard	Quick clipboard conversion
+Bấm ở bất cứ đâu để chuyển mã nội dung clipboard theo hai bảng mã ở trên.	Press anywhere to convert the clipboard between the two encodings above.
+Chuyển clipboard ngay	Convert clipboard now
+Đã chuyển mã clipboard	Clipboard converted
+Clipboard không có văn bản	The clipboard has no text
+Chế độ gõ riêng cho từng ứng dụng.	Typing settings per application.
+Theo từng ứng dụng	Per application
+Nhớ chế độ Anh/Việt cho từng ứng dụng	Remember English/Vietnamese per app
+Mỗi cửa sổ giữ chế độ gõ riêng khi chuyển qua lại.	Each window keeps its own typing mode when you switch between them.
+Sửa lỗi gợi ý tự động	Fix autocomplete glitches
+Thanh địa chỉ trình duyệt và Excel hay bôi đen phần gợi ý, làm mất chữ khi bỏ dấu. Áp dụng cho Chrome, Edge, Firefox, Cốc Cốc, Brave, Opera, Excel.	Browser address bars and Excel highlight autocomplete suggestions, which can swallow letters when accents are added. Applies to Chrome, Edge, Firefox, Cốc Cốc, Brave, Opera, Excel.
+Quyền Administrator	Administrator rights
+C_Input đang chạy với quyền Administrator: gõ được trong mọi ứng dụng, kể cả ứng dụng quyền Admin.	C_Input is running as administrator: it can type into every app, including elevated ones.
+Windows không cho chương trình thường gõ vào ứng dụng chạy quyền Admin (Task Manager, cmd quyền Admin, trình cài đặt…). C_Input sẽ tự tạm ngừng bỏ dấu ở đó và báo cho bạn.	Windows does not let normal programs type into elevated apps (Task Manager, admin cmd, installers…). C_Input pauses accents there and tells you.
+Đang chạy quyền Admin	Running as administrator
+Chạy thường	Running normally
+Chạy với quyền Admin	Run as administrator
+Luôn gõ tiếng Anh trong	Always English in
+Trong các ứng dụng này C_Input không bỏ dấu — hữu ích cho trình soạn code, game, terminal…	C_Input adds no accents in these apps — useful for code editors, games, terminals…
+Gửi chữ qua clipboard	Type via clipboard
+Phần mềm cũ không nhận chữ tiếng Việt từ bộ gõ (ra dấu hỏi, ô vuông)? Thêm vào đây: C_Input sẽ dán chữ qua clipboard rồi trả lại nội dung clipboard của bạn.	Old software shows question marks or boxes instead of Vietnamese? Add it here: C_Input pastes the text through the clipboard, then restores your clipboard.
+Bảng phím tự định nghĩa	User-defined key map
+Gõ một phím cho mỗi chức năng (để trống nếu không dùng). Lưu ngay khi sửa, dùng chung định dạng file keymap.txt với UniKey.	Type one key for each function (leave empty if unused). Saved as you edit, in the same keymap.txt format as UniKey.
+Nạp từ file keymap.txt…	Load keymap.txt…
+Bảng phím UniKey (keymap.txt)	UniKey key map (keymap.txt)
+Nạp bảng phím	Load key map
+Đã nạp bảng phím	Key map loaded
+File không có bảng phím hợp lệ	The file has no valid key map
+Lưu ra file…	Save to file…
+Bảng phím (keymap.txt)	Key map (keymap.txt)
+Lưu bảng phím	Save key map
+Đã lưu bảng phím	Key map saved
+Đặt lại giống Telex	Reset to Telex
+Gõ xong một câu, C_Input tự dịch câu đó sang ngôn ngữ bạn chọn bằng Google Gemini.	When you finish a sentence, C_Input translates it into your chosen language with Google Gemini.
+Dịch tự động	Automatic translation
+Dịch câu vừa gõ	Translate each sentence
+Kết thúc câu bằng . ? hoặc ! rồi dấu cách: câu đó được thay bằng bản dịch, bạn gõ tiếp câu sau ngay, không phải chờ. Không dịch khi bấm Enter, trong ô mật khẩu và ứng dụng luôn gõ tiếng Anh.	End a sentence with . ? or ! and a space: it is replaced by its translation while you keep typing the next one. Not used on Enter, in password fields or in always-English apps.
+Dịch sang	Translate to
+Ngôn ngữ đích của bản dịch. Gõ để tìm nhanh, không cần dấu.	Target language. Type to search; accents are optional.
+Dịch đoạn bôi đen	Translate selected text
+Bấm Ctrl+C hai lần để dịch	Press Ctrl+C twice to translate
+Bôi đen một đoạn chữ ở bất kỳ đâu (tin nhắn đến, trang web, tài liệu) rồi bấm Ctrl+C hai lần liền: bản dịch hiện trong cửa sổ nhỏ cạnh con trỏ, đổi ngôn ngữ ngay trong đó. Văn bản gốc không bị sửa.	Select text anywhere (incoming messages, web pages, documents) and press Ctrl+C twice: the translation appears in a small window next to the pointer, where you can change the language. The original text is not changed.
+Ngôn ngữ bạn đọc — thường là tiếng Việt.	The language you read — usually Vietnamese.
+Bật một trong hai tính năng trên để gắn API key Gemini. Khi tắt cả hai, C_Input không gửi gì lên mạng.	Turn on one of the features above to add a Gemini API key. With both off, C_Input sends nothing over the network.
+Đã lưu key ••••{}	Key saved ••••{}
+(mã hoá bằng Windows, chỉ tài khoản của bạn đọc được)	(encrypted by Windows, readable only by your account)
+Chưa có API key	No API key yet
+Dán key mới để thay	Paste a new key to replace it
+Dán API key Gemini vào đây	Paste your Gemini API key here
+  Lưu key  	  Save key  
+Kiểm tra	Check
+Xoá key	Delete key
+Chưa có key? Tạo miễn phí tại	No key yet? Create one for free at
+Đang liên hệ Gemini…	Contacting Gemini…
+Model "flash" nhanh và rẻ, hợp để dịch từng câu. Bấm Kiểm tra để lấy danh sách.	"Flash" models are fast and cheap, a good fit for sentence translation. Click Check to load the list.
+Model	Model
+API key Gemini	Gemini API key
+Hãy dán API key trước khi lưu	Paste an API key before saving
+Đã lưu API key (đã mã hoá)	API key saved (encrypted)
+Đã xoá API key	API key deleted
+Dịch thử	Try a translation
+Gõ một câu để thử, ví dụ: Hôm nay trời đẹp quá.	Type a sentence to try, e.g. Hôm nay trời đẹp quá.
+  Dịch thử  	  Translate  
+Cần lưu API key trước	Save an API key first
+Hãy gõ câu cần dịch	Type something to translate
+Phiên bản {}	Version {}
+Bộ gõ tiếng Việt cho Windows — nhẹ, nhanh, chạy hoàn toàn trên máy.	Vietnamese keyboard for Windows — light, fast, runs entirely on your PC.
+Phím tắt	Shortcuts
+Mở cửa sổ cài đặt	Open settings
+Chuyển mã clipboard	Convert clipboard
+Cập nhật	Updates
+Tự kiểm tra bản mới	Check for updates automatically
+Mỗi ngày hỏi GitHub một lần, có bản mới thì báo ở khay hệ thống. Không tự cài.	Asks GitHub once a day and notifies you in the tray when a new version exists. Never installs by itself.
+Kiểm tra cập nhật	Check for updates
+Cập nhật lên {}	Update to {}
+Xem các bản phát hành	View releases
+Đang liên hệ GitHub…	Contacting GitHub…
+Khi cập nhật: tải bản mới, kiểm tra mã SHA-256, thay file rồi khởi động lại C_Input.	Updating downloads the new version, checks its SHA-256, replaces the file and restarts C_Input.
+Thông tin	Information
+Lõi gõ viết bằng Rust: Telex, VNI, đặt dấu tự do, kiểm tra chính tả, tự khôi phục từ tiếng Anh.	Typing engine written in Rust: Telex, VNI, free accent typing, spell check, automatic English word restore.
+Không gửi dữ liệu ra ngoài, không cần mạng.	Sends no data anywhere and needs no network (except optional AI translation).
+Bảng mã TCVN3 / VNI Windows tham khảo từ mã nguồn UniKey 3.62 của Phạm Kim Long (GPL).	TCVN3 / VNI Windows tables are taken from the UniKey 3.62 source by Phạm Kim Long (GPL).
+Cấu hình lưu tại %APPDATA%\C_Input.	Settings are stored in %APPDATA%\C_Input.
+Mở thư mục cấu hình	Open settings folder
+API key hoạt động — {} model dùng được.	API key works — {} models available.
+Đã có bản {} (bạn đang dùng {}).	Version {} is available (you have {}).
+Bạn đang dùng bản mới nhất ({}).	You have the latest version ({}).
+Tìm trong {} ngôn ngữ… (vd: dai loan, japan)	Search {} languages… (e.g. japan, taiwan)
+Dùng ngôn ngữ «{}»	Use language “{}”
+Không có trong danh sách: gửi nguyên tên này cho Gemini	Not in the list: this name is sent to Gemini as is
+Không tìm thấy ngôn ngữ phù hợp.	No matching language.
+Chọn ứng dụng đang mở…	Pick a running app…
+hoặc	or
+tên file, vd: code.exe	file name, e.g. code.exe
+Chưa có ứng dụng nào.	No apps yet.
+Bỏ khỏi danh sách	Remove from the list
+Ngôn ngữ giao diện	Interface language
+Interface language	Interface language
+Chưa có API key Gemini — mở Cài đặt → Dịch AI để thêm.	No Gemini API key — open Settings → AI translate to add one.
+Đóng (Esc)	Close (Esc)
+Đang dịch sang {}…	Translating to {}…
+Mở cài đặt Dịch AI	Open AI translate settings
+✓ Đã chép	✓ Copied
+Chép bản dịch	Copy translation
+Dịch lại	Translate again
+Esc để đóng	Esc to close
+C_Input — đang nhập mật khẩu: tạm gõ tiếng Anh	C_Input — password field: typing in English
+C_Input — không gõ được vào {} (ứng dụng chạy quyền Admin)	C_Input — cannot type into {} (running as administrator)
+C_Input — Tiếng Anh ({} luôn gõ tiếng Anh)	C_Input — English ({} is always English)
+Không gõ được tiếng Việt trong {}	Cannot type Vietnamese in {}
+Ứng dụng này chạy với quyền Administrator. Chuột phải biểu tượng C_Input → "Chạy với quyền Administrator" để gõ được.	This app runs as administrator. Right-click the C_Input icon → "Run as administrator" to type in it.
+Gõ tiếng Việt\t{}	Vietnamese typing\t{}
+Kiểu gõ: {}	Input method: {}
+Bảng mã: {}	Character set: {}
+Dịch AI tự động → {}	Auto translate → {}
+Đã có C_Input {}	C_Input {} is available
+Mở Cài đặt → Giới thiệu → Cập nhật để cài bản mới (kiểm tra SHA-256 trước khi cài).	Open Settings → About → Updates to install it (SHA-256 is checked first).
+Clipboard trống	Clipboard is empty
+Hãy chép (Ctrl+C) đoạn văn bản cần chuyển mã trước.	Copy (Ctrl+C) the text you want to convert first.
+Dịch AI không thành công	AI translation failed
+Dịch nội dung clipboard…	Translate clipboard…
+Chuyển mã clipboard\tCtrl+Shift+F9	Convert clipboard\tCtrl+Shift+F9
+Bảng gõ tắt…	Shortcuts…
+Cài đặt…\tCtrl+Shift+F5	Settings…\tCtrl+Shift+F5
+Chạy với quyền Administrator	Run as administrator
+Thoát C_Input	Exit C_Input
+Chưa có API key Gemini	No Gemini API key
+Mở Cài đặt → Dịch AI để thêm API key.	Open Settings → AI translate to add an API key.
+C_Input — Tiếng Việt\n{} · {}	C_Input — Vietnamese\n{} · {}
+C_Input — Tiếng Anh\nBấm {} để chuyển	C_Input — English\nPress {} to switch
+Telex đơn giản	Simple Telex
+Tự định nghĩa	User-defined
+Xoá dấu thanh	Remove tone
+Dấu sắc	Acute tone
+Dấu huyền	Grave tone
+Dấu hỏi	Hook tone
+Dấu ngã	Tilde tone
+Dấu nặng	Dot tone
+Mũ cho a / e / o (â ê ô)	Circumflex for a / e / o (â ê ô)
+Mũ cho a (â)	Circumflex on a (â)
+Mũ cho e (ê)	Circumflex on e (ê)
+Mũ cho o (ô)	Circumflex on o (ô)
+Móc hoặc trăng (ư ơ ă)	Horn or breve (ư ơ ă)
+Như w của Telex (ư ơ ă, gõ riêng ra ư)	Like Telex w (ư ơ ă; alone gives ư)
+Móc (ư ơ)	Horn (ư ơ)
+Trăng (ă)	Breve (ă)
+Gạch d (đ)	Stroke d (đ)
+Chữ â	Letter â
+Chữ ê	Letter ê
+Chữ ô	Letter ô
+Chữ ă	Letter ă
+Chữ ơ	Letter ơ
+Chữ ư	Letter ư
+Chữ đ	Letter đ
+Unicode dựng sẵn	Unicode (precomposed)
+Unicode tổ hợp	Unicode (combining)
+NCR thập phân	NCR decimal
+NCR thập lục phân	NCR hex
+UTF-8 Literal (sửa lỗi font)	UTF-8 Literal (fix garbled text)
+Tổ hợp	Combining

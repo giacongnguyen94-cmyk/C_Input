@@ -156,11 +156,11 @@ pub fn icon_text(glyph: &str, size: f32, color: Color32) -> RichText {
 }
 
 pub fn title(text: &str, size: f32) -> RichText {
-    RichText::new(text).font(FontId::new(size, semibold())).color(TEXT)
+    RichText::new(crate::i18n::t(text)).font(FontId::new(size, semibold())).color(TEXT)
 }
 
 pub fn muted(text: &str) -> RichText {
-    RichText::new(text).size(12.5).color(MUTED)
+    RichText::new(crate::i18n::t(text)).size(12.5).color(MUTED)
 }
 
 /// Công tắc bật/tắt.
@@ -238,7 +238,7 @@ pub fn segmented<T: PartialEq + Copy>(ui: &mut Ui, value: &mut T, options: &[(T,
 pub fn card<R>(ui: &mut Ui, heading: Option<&str>, add: impl FnOnce(&mut Ui) -> R) -> R {
     if let Some(h) = heading {
         ui.add_space(6.0);
-        ui.label(RichText::new(h).font(FontId::new(13.0, semibold())).color(MUTED));
+        ui.label(RichText::new(crate::i18n::t(h)).font(FontId::new(13.0, semibold())).color(MUTED));
         ui.add_space(2.0);
     }
     let r = Frame::new()
@@ -262,6 +262,7 @@ const ROW_STACK_WIDTH: f32 = 640.0;
 /// Một dòng cài đặt: tên + mô tả bên trái, điều khiển bên phải.
 /// Cửa sổ hẹp thì tự xếp điều khiển xuống dưới, không bao giờ đẩy trang rộng quá khung nhìn.
 pub fn row(ui: &mut Ui, name: &str, desc: &str, control: impl FnOnce(&mut Ui)) {
+    let (name, desc) = (crate::i18n::t(name), crate::i18n::t(desc));
     ui.add_space(6.0);
     let avail = ui.available_width();
     let labels = |ui: &mut Ui| {
@@ -315,7 +316,7 @@ pub fn row_sep(ui: &mut Ui) {
 
 pub fn primary_button(ui: &mut Ui, text: &str) -> Response {
     ui.add(
-        egui::Button::new(RichText::new(text).font(FontId::new(14.0, semibold())).color(ON_ACCENT))
+        egui::Button::new(RichText::new(crate::i18n::t(text)).font(FontId::new(14.0, semibold())).color(ON_ACCENT))
             .fill(ACCENT)
             .stroke(Stroke::NONE)
             .corner_radius(CornerRadius::same(8))
@@ -325,6 +326,7 @@ pub fn primary_button(ui: &mut Ui, text: &str) -> Response {
 }
 
 pub fn button(ui: &mut Ui, glyph: Option<&str>, text: &str) -> Response {
+    let text = crate::i18n::t(text);
     let mut job = egui::text::LayoutJob::default();
     if let Some(g) = glyph {
         job.append(g, 0.0, egui::TextFormat { font_id: FontId::new(13.0, icons_family()), color: TEXT, valign: Align::Center, ..Default::default() });
@@ -365,6 +367,7 @@ pub fn keycap(ui: &mut Ui, text: &str) {
 
 /// Mục điều hướng ở thanh bên.
 pub fn nav_item(ui: &mut Ui, glyph: &str, label: &str, selected: bool) -> Response {
+    let label = crate::i18n::t(label);
     let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 40.0), Sense::click());
     let p = ui.painter();
     if selected {

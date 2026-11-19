@@ -243,6 +243,9 @@ pub fn language_matches(name: &str, label: &str, query: &str) -> bool {
 }
 
 pub fn language_label(name: &str) -> &str {
+    if crate::i18n::is_en() {
+        return name;
+    }
     languages().iter().find(|(n, _)| *n == name).map(|(_, l)| *l).unwrap_or(name)
 }
 

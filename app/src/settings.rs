@@ -96,6 +96,7 @@ impl SettingsApp {
             cc.egui_ctx.load_texture("logo", ColorImage::from_rgba_unmultiplied(size, &img), TextureOptions::LINEAR)
         });
         let cfg = Config::load();
+        crate::i18n::set_lang(&cfg.ui_lang);
         let (ai_tx, ai_rx) = std::sync::mpsc::channel();
         let page = match page.as_deref() {
             Some("macros") => Page::Macros,
@@ -169,7 +170,7 @@ impl SettingsApp {
                 win::notify_service(win::WM_CINPUT_RELOAD);
                 self.toast("Đã lưu thay đổi");
             }
-            Err(e) => self.toast(&format!("Không lưu được: {e}")),
+            Err(e) => self.toast(&crate::i18n::fill(crate::i18n::t("Không lưu được: {}"), &[&e])),
         }
     }
 
@@ -179,7 +180,7 @@ impl SettingsApp {
                 win::notify_service(win::WM_CINPUT_RELOAD);
                 self.toast("Đã lưu bảng gõ tắt");
             }
-            Err(e) => self.toast(&format!("Không lưu được: {e}")),
+            Err(e) => self.toast(&crate::i18n::fill(crate::i18n::t("Không lưu được: {}"), &[&e])),
         }
     }
 
@@ -217,18 +218,18 @@ impl SettingsApp {
                 ui.spacing_mut().item_spacing.y = 0.0;
                 ui.add_space(2.0);
                 ui.label(ui::title("C_Input", 19.0));
-                ui.label(ui::muted("Bộ gõ tiếng Việt"));
+                ui.label(ui::muted(crate::i18n::t("Bộ gõ tiếng Việt")));
             });
         });
         ui.add_space(22.0);
         ui.spacing_mut().item_spacing.y = 4.0;
         let items = [
-            (Page::Typing, icon::KEYBOARD, "Bộ gõ"),
-            (Page::Macros, icon::MACRO, "Gõ tắt"),
-            (Page::Convert, icon::CONVERT, "Chuyển mã"),
-            (Page::Apps, icon::APPS, "Ứng dụng"),
-            (Page::Ai, icon::GLOBE, "Dịch AI"),
-            (Page::About, icon::INFO, "Giới thiệu"),
+            (Page::Typing, icon::KEYBOARD, crate::i18n::t("Bộ gõ")),
+            (Page::Macros, icon::MACRO, crate::i18n::t("Gõ tắt")),
+            (Page::Convert, icon::CONVERT, crate::i18n::t("Chuyển mã")),
+            (Page::Apps, icon::APPS, crate::i18n::t("Ứng dụng")),
+            (Page::Ai, icon::GLOBE, crate::i18n::t("Dịch AI")),
+            (Page::About, icon::INFO, crate::i18n::t("Giới thiệu")),
         ];
         for (page, glyph, label) in items {
             if ui::nav_item(ui, glyph, label, self.page == page).clicked() {
@@ -252,12 +253,12 @@ impl SettingsApp {
                 if !self.service_running {
                     ui.horizontal(|ui| {
                         ui.label(ui::icon_text(icon::WARNING, 14.0, ui::WARN));
-                        ui.label(RichText::new("Bộ gõ chưa chạy").color(ui::WARN).font(FontId::new(13.5, ui::semibold())));
+                        ui.label(RichText::new(crate::i18n::t("Bộ gõ chưa chạy")).color(ui::WARN).font(FontId::new(13.5, ui::semibold())));
                     });
-                    ui.label(ui::muted("Bấm để khởi động bộ gõ nền."));
+                    ui.label(ui::muted(crate::i18n::t("Bấm để khởi động bộ gõ nền.")));
                     ui.add_space(4.0);
                     let btn = egui::Button::new(
-                        RichText::new("Khởi động bộ gõ").font(FontId::new(14.0, ui::semibold())).color(ui::ON_ACCENT),
+                        RichText::new(crate::i18n::t("Khởi động bộ gõ")).font(FontId::new(14.0, ui::semibold())).color(ui::ON_ACCENT),
                     )
                     .fill(ui::ACCENT)
                     .corner_radius(CornerRadius::same(8))
@@ -271,16 +272,16 @@ impl SettingsApp {
                 ui.horizontal(|ui| {
                     ui.vertical(|ui| {
                         ui.spacing_mut().item_spacing.y = 1.0;
-                        ui.label(ui::title(if on { "Tiếng Việt" } else { "Tiếng Anh" }, 15.0));
+                        ui.label(ui::title(if on { crate::i18n::t("Tiếng Việt") } else { crate::i18n::t("Tiếng Anh") }, 15.0));
                         let detail = if on {
-                            format!("{} · {}", self.cfg.method.label(), self.cfg.charset.short())
+                            format!("{} · {}", crate::i18n::t(self.cfg.method.label()), self.cfg.charset.short())
                         } else {
-                            "Đang tắt gõ dấu".to_string()
+                            crate::i18n::t("Đang tắt gõ dấu").to_string()
                         };
                         ui.label(ui::muted(&detail));
                     });
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        ui::toggle(ui, &mut self.cfg.vietnamese).on_hover_text("Bật/tắt gõ tiếng Việt");
+                        ui::toggle(ui, &mut self.cfg.vietnamese).on_hover_text(crate::i18n::t("Bật/tắt gõ tiếng Việt"));
                     });
                 });
                 ui.add_space(6.0);
@@ -289,7 +290,7 @@ impl SettingsApp {
                     for k in self.cfg.switch_key.label().split(" + ") {
                         ui::keycap(ui, k);
                     }
-                    ui.label(ui::muted("để chuyển"));
+                    ui.label(ui::muted(crate::i18n::t("để chuyển")));
                 });
             }));
     }
@@ -303,18 +304,18 @@ impl SettingsApp {
     // ------------------------------------------------------------------ trang Bộ gõ
 
     fn page_typing(&mut self, ui: &mut Ui) {
-        Self::header(ui, "Bộ gõ", "Kiểu gõ, bảng mã và cách đặt dấu.");
+        Self::header(ui, crate::i18n::t("Bộ gõ"), crate::i18n::t("Kiểu gõ, bảng mã và cách đặt dấu."));
         let (english_builtin, english_user) = (self.english_builtin, self.english_user);
         let (mut english_open, mut english_reload) = (false, false);
         let cfg = &mut self.cfg;
-        ui::card(ui, Some("Kiểu gõ"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Kiểu gõ")), |ui| {
             ui::row(
                 ui,
-                "Kiểu gõ",
-                "Telex gõ dấu bằng chữ (s f r x j), VNI bằng phím số (1–9), VIQR bằng dấu câu (a' a` a? a~ a.). \
-                 Tự định nghĩa: tự gán phím, đọc được file keymap.txt của UniKey.",
+                crate::i18n::t("Kiểu gõ"),
+                crate::i18n::t("Telex gõ dấu bằng chữ (s f r x j), VNI bằng phím số (1–9), VIQR bằng dấu câu (a' a` a? a~ a.). \
+                 Tự định nghĩa: tự gán phím, đọc được file keymap.txt của UniKey."),
                 |ui| {
-                    egui::ComboBox::from_id_salt("method").selected_text(cfg.method.label()).width(210.0).show_ui(ui, |ui| {
+                    egui::ComboBox::from_id_salt("method").selected_text(crate::i18n::t(cfg.method.label())).width(210.0).show_ui(ui, |ui| {
                         for m in Method::ALL {
                             ui.selectable_value(&mut cfg.method, m, m.label());
                         }
@@ -322,9 +323,9 @@ impl SettingsApp {
                 },
             );
             ui::row_sep(ui);
-            ui::row(ui, "Bảng mã", "Bảng mã của chữ gửi vào ứng dụng. Dùng Unicode cho hầu hết trường hợp.", |ui| {
+            ui::row(ui, crate::i18n::t("Bảng mã"), crate::i18n::t("Bảng mã của chữ gửi vào ứng dụng. Dùng Unicode cho hầu hết trường hợp."), |ui| {
                 egui::ComboBox::from_id_salt("charset")
-                    .selected_text(cfg.charset.label())
+                    .selected_text(crate::i18n::t(cfg.charset.label()))
                     .width(210.0)
                     .show_ui(ui, |ui| {
                         for c in Charset::TYPING {
@@ -333,7 +334,7 @@ impl SettingsApp {
                     });
             });
             ui::row_sep(ui);
-            ui::row(ui, "Phím chuyển Anh/Việt", "Phím tắt bật/tắt gõ tiếng Việt ở bất cứ đâu.", |ui| {
+            ui::row(ui, crate::i18n::t("Phím chuyển Anh/Việt"), crate::i18n::t("Phím tắt bật/tắt gõ tiếng Việt ở bất cứ đâu."), |ui| {
                 ui::segmented(
                     ui,
                     &mut cfg.switch_key,
@@ -342,16 +343,16 @@ impl SettingsApp {
             });
         });
 
-        ui::card(ui, Some("Cách đặt dấu"), |ui| {
-            ui::row(ui, "Đặt dấu kiểu mới", "hoà, khoẻ, thuý — thay cho hòa, khỏe, thúy.", |ui| {
+        ui::card(ui, Some(crate::i18n::t("Cách đặt dấu")), |ui| {
+            ui::row(ui, crate::i18n::t("Đặt dấu kiểu mới"), crate::i18n::t("hoà, khoẻ, thuý — thay cho hòa, khỏe, thúy."), |ui| {
                 ui::toggle(ui, &mut cfg.modern_tone);
             });
             ui::row_sep(ui);
             ui::row(
                 ui,
-                "Gõ dấu tự do",
-                "Gõ dấu ở bất kỳ đâu trong từ (tiengs → tiếng). Tắt: mũ, móc, trăng, đ phải gõ ngay sau chữ cần dấu \
-                 (tieengs); dấu thanh vẫn gõ cuối từ được.",
+                crate::i18n::t("Gõ dấu tự do"),
+                crate::i18n::t("Gõ dấu ở bất kỳ đâu trong từ (tiengs → tiếng). Tắt: mũ, móc, trăng, đ phải gõ ngay sau chữ cần dấu \
+                 (tieengs); dấu thanh vẫn gõ cuối từ được."),
                 |ui| {
                     ui::toggle(ui, &mut cfg.free_marking);
                 },
@@ -359,9 +360,9 @@ impl SettingsApp {
             ui::row_sep(ui);
             ui::row(
                 ui,
-                "Phím Esc khôi phục từ",
-                "Bấm Esc ngay sau một từ để đổi qua lại giữa tiếng Việt và đúng các phím đã gõ: its → ít → Esc → its; \
-                 test → Esc → tét. Hoàn tác được cả gõ tắt.",
+                crate::i18n::t("Phím Esc khôi phục từ"),
+                crate::i18n::t("Bấm Esc ngay sau một từ để đổi qua lại giữa tiếng Việt và đúng các phím đã gõ: its → ít → Esc → its; \
+                 test → Esc → tét. Hoàn tác được cả gõ tắt."),
                 |ui| {
                     ui::toggle(ui, &mut cfg.restore_key);
                 },
@@ -369,8 +370,8 @@ impl SettingsApp {
             ui::row_sep(ui);
             ui::row(
                 ui,
-                "Kiểm tra chính tả",
-                "Không bỏ dấu vào từ sai chính tả, tự trả lại phím gốc cho từ tiếng Anh (windows, text…).",
+                crate::i18n::t("Kiểm tra chính tả"),
+                crate::i18n::t("Không bỏ dấu vào từ sai chính tả, tự trả lại phím gốc cho từ tiếng Anh (windows, text…)."),
                 |ui| {
                     ui::toggle(ui, &mut cfg.spell_check);
                 },
@@ -378,20 +379,18 @@ impl SettingsApp {
             ui::row_sep(ui);
             ui::row(
                 ui,
-                "Từ tiếng Anh giữ nguyên",
-                &format!(
-                    "Gõ đúng các từ như test, error, password, data… thì giữ tiếng Anh. \
-                     {english_builtin} từ có sẵn + {english_user} từ của bạn. Muốn ra \"tét\" thì gõ \"tets\".",
-                ),
+                crate::i18n::t("Từ tiếng Anh giữ nguyên"),
+                &crate::i18n::fill(crate::i18n::t("Gõ đúng các từ như test, error, password, data… thì giữ tiếng Anh. \
+                     {} từ có sẵn + {} từ của bạn. Muốn ra \"tét\" thì gõ \"tets\"."), &[&english_builtin, &english_user]),
                 |ui| {
                     ui::toggle(ui, &mut cfg.english_words);
                 },
             );
             ui.horizontal_wrapped(|ui| {
-                if ui::button(ui, Some(icon::FOLDER), "Sửa danh sách của tôi").clicked() {
+                if ui::button(ui, Some(icon::FOLDER), crate::i18n::t("Sửa danh sách của tôi")).clicked() {
                     english_open = true;
                 }
-                if ui::button(ui, Some(icon::REFRESH), "Nạp lại").on_hover_text("Đọc lại danh sách sau khi sửa").clicked() {
+                if ui::button(ui, Some(icon::REFRESH), crate::i18n::t("Nạp lại")).on_hover_text(crate::i18n::t("Đọc lại danh sách sau khi sửa")).clicked() {
                     english_reload = true;
                 }
             });
@@ -408,12 +407,12 @@ impl SettingsApp {
         }
 
         let cfg = &mut self.cfg;
-        ui::card(ui, Some("Tự động"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Tự động")), |ui| {
             ui::row(
                 ui,
-                "Tự viết hoa đầu câu",
-                "Chữ đầu tiên sau dấu . ? ! và khi xuống dòng tự viết hoa. Bỏ qua viết tắt (v.v., TP.), \
-                 dấu ba chấm và địa chỉ web.",
+                crate::i18n::t("Tự viết hoa đầu câu"),
+                crate::i18n::t("Chữ đầu tiên sau dấu . ? ! và khi xuống dòng tự viết hoa. Bỏ qua viết tắt (v.v., TP.), \
+                 dấu ba chấm và địa chỉ web."),
                 |ui| {
                     ui::toggle(ui, &mut cfg.auto_capitalize);
                 },
@@ -421,9 +420,9 @@ impl SettingsApp {
             ui::row_sep(ui);
             ui::row(
                 ui,
-                "Tắt tiếng Việt trong ô mật khẩu",
-                "Khi đang nhập mật khẩu, C_Input gõ ra đúng phím đã bấm (không bỏ dấu, không gõ tắt) \
-                 và biểu tượng khay chuyển sang màu xám.",
+                crate::i18n::t("Tắt tiếng Việt trong ô mật khẩu"),
+                crate::i18n::t("Khi đang nhập mật khẩu, C_Input gõ ra đúng phím đã bấm (không bỏ dấu, không gõ tắt) \
+                 và biểu tượng khay chuyển sang màu xám."),
                 |ui| {
                     ui::toggle(ui, &mut cfg.password_off);
                 },
@@ -435,16 +434,16 @@ impl SettingsApp {
         }
 
         let method = self.cfg.method;
-        ui::card(ui, Some("Gõ thử"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Gõ thử")), |ui| {
             ui.add_space(8.0);
             ui::input_frame(ui, |ui| {
                 ui.add(
                     TextEdit::singleline(&mut self.playground)
                         .frame(egui::Frame::NONE)
                         .hint_text(if method == Method::Vni {
-                            "Gõ thử ở đây, ví dụ: Tie61ng Vie65t"
+                            crate::i18n::t("Gõ thử ở đây, ví dụ: Tie61ng Vie65t")
                         } else {
-                            "Gõ thử ở đây, ví dụ: Tieesng Vieejt"
+                            crate::i18n::t("Gõ thử ở đây, ví dụ: Tieesng Vieejt")
                         })
                         .font(FontId::proportional(16.0))
                         .desired_width(f32::INFINITY),
@@ -456,13 +455,22 @@ impl SettingsApp {
         });
 
         let cfg = &mut self.cfg;
-        ui::card(ui, Some("Hệ thống"), |ui| {
-            ui::row(ui, "Khởi động cùng Windows", "Tự chạy C_Input khi đăng nhập Windows.", |ui| {
+        ui::card(ui, Some(crate::i18n::t("Hệ thống")), |ui| {
+            ui::row(ui, crate::i18n::t("Khởi động cùng Windows"), crate::i18n::t("Tự chạy C_Input khi đăng nhập Windows."), |ui| {
                 ui::toggle(ui, &mut cfg.autostart);
             });
             ui::row_sep(ui);
-            ui::row(ui, "Tiếng bíp khi chuyển chế độ", "Phát âm thanh ngắn khi bật/tắt tiếng Việt.", |ui| {
+            ui::row(ui, crate::i18n::t("Tiếng bíp khi chuyển chế độ"), crate::i18n::t("Phát âm thanh ngắn khi bật/tắt tiếng Việt."), |ui| {
                 ui::toggle(ui, &mut cfg.beep);
+            });
+            ui::row_sep(ui);
+            ui::row(ui, "Ngôn ngữ giao diện", "Interface language", |ui| {
+                let mut lang: &str = if cfg.ui_lang == "en" { "en" } else { "vi" };
+                ui::segmented(ui, &mut lang, &[("vi", "Tiếng Việt"), ("en", "English")]);
+                if lang != cfg.ui_lang {
+                    cfg.ui_lang = lang.to_string();
+                    crate::i18n::set_lang(lang);
+                }
             });
         });
     }
@@ -470,17 +478,17 @@ impl SettingsApp {
     fn cheatsheet(ui: &mut Ui, method: Method) {
         let pairs: &[(&str, &str)] = if method == Method::Vni {
             &[
-                ("1", "sắc"), ("2", "huyền"), ("3", "hỏi"), ("4", "ngã"), ("5", "nặng"), ("0", "xoá dấu"),
-                ("6", "â ê ô"), ("7", "ơ ư"), ("8", "ă"), ("9", "đ"),
+                ("1", crate::i18n::t("sắc")), ("2", crate::i18n::t("huyền")), ("3", crate::i18n::t("hỏi")), ("4", crate::i18n::t("ngã")), ("5", crate::i18n::t("nặng")), ("0", crate::i18n::t("xoá dấu")),
+                ("6", crate::i18n::t("â ê ô")), ("7", crate::i18n::t("ơ ư")), ("8", crate::i18n::t("ă")), ("9", crate::i18n::t("đ")),
             ]
         } else {
             let mut v: Vec<(&str, &str)> = vec![
-                ("s", "sắc"), ("f", "huyền"), ("r", "hỏi"), ("x", "ngã"), ("j", "nặng"), ("z", "xoá dấu"),
-                ("aa", "â"), ("aw", "ă"), ("ee", "ê"), ("oo", "ô"), ("ow", "ơ"), ("uw", "ư"), ("dd", "đ"),
+                ("s", crate::i18n::t("sắc")), ("f", crate::i18n::t("huyền")), ("r", crate::i18n::t("hỏi")), ("x", crate::i18n::t("ngã")), ("j", crate::i18n::t("nặng")), ("z", crate::i18n::t("xoá dấu")),
+                ("aa", crate::i18n::t("â")), ("aw", crate::i18n::t("ă")), ("ee", crate::i18n::t("ê")), ("oo", crate::i18n::t("ô")), ("ow", crate::i18n::t("ơ")), ("uw", crate::i18n::t("ư")), ("dd", crate::i18n::t("đ")),
             ];
             if method == Method::Telex {
-                v.push(("w", "ư"));
-                v.push(("[ ]", "ơ ư"));
+                v.push(("w", crate::i18n::t("ư")));
+                v.push(("[ ]", crate::i18n::t("ơ ư")));
             }
             return Self::chips(ui, &v);
         };
@@ -499,24 +507,24 @@ impl SettingsApp {
     // ------------------------------------------------------------------ trang Gõ tắt
 
     fn page_macros(&mut self, ui: &mut Ui) {
-        Self::header(ui, "Gõ tắt", "Gõ một từ ngắn rồi bấm cách để thay bằng cụm từ đầy đủ.");
+        Self::header(ui, crate::i18n::t("Gõ tắt"), crate::i18n::t("Gõ một từ ngắn rồi bấm cách để thay bằng cụm từ đầy đủ."));
         let cfg = &mut self.cfg;
-        ui::card(ui, Some("Tuỳ chọn"), |ui| {
-            ui::row(ui, "Bật gõ tắt", "Thay từ tắt khi gõ dấu cách, dấu câu hoặc Enter.", |ui| {
+        ui::card(ui, Some(crate::i18n::t("Tuỳ chọn")), |ui| {
+            ui::row(ui, crate::i18n::t("Bật gõ tắt"), crate::i18n::t("Thay từ tắt khi gõ dấu cách, dấu câu hoặc Enter."), |ui| {
                 ui::toggle(ui, &mut cfg.macro_enabled);
             });
             ui::row_sep(ui);
-            ui::row(ui, "Gõ tắt cả khi tắt tiếng Việt", "Vẫn thay từ tắt khi đang ở chế độ tiếng Anh.", |ui| {
+            ui::row(ui, crate::i18n::t("Gõ tắt cả khi tắt tiếng Việt"), crate::i18n::t("Vẫn thay từ tắt khi đang ở chế độ tiếng Anh."), |ui| {
                 ui::toggle(ui, &mut cfg.macro_always);
             });
             ui::row_sep(ui);
-            ui::row(ui, "Tự viết hoa theo chữ gõ", "vn → việt nam, Vn → Việt nam, VN → VIỆT NAM.", |ui| {
+            ui::row(ui, crate::i18n::t("Tự viết hoa theo chữ gõ"), crate::i18n::t("vn → việt nam, Vn → Việt nam, VN → VIỆT NAM."), |ui| {
                 ui::toggle(ui, &mut cfg.macro_auto_case);
             });
         });
 
         let mut add = false;
-        ui::card(ui, Some("Thêm gõ tắt"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Thêm gõ tắt")), |ui| {
             ui.add_space(8.0);
             ui.horizontal(|ui| {
                 ui.allocate_ui(vec2(150.0, 34.0), |ui| {
@@ -524,7 +532,7 @@ impl SettingsApp {
                         let r = ui.add(
                             TextEdit::singleline(&mut self.new_key)
                                 .frame(egui::Frame::NONE)
-                                .hint_text("Từ tắt, vd: vn")
+                                .hint_text(crate::i18n::t("Từ tắt, vd: vn"))
                                 .desired_width(f32::INFINITY),
                         );
                         add |= r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
@@ -537,13 +545,13 @@ impl SettingsApp {
                         let r = ui.add(
                             TextEdit::singleline(&mut self.new_value)
                                 .frame(egui::Frame::NONE)
-                                .hint_text("Nội dung thay thế, vd: Việt Nam")
+                                .hint_text(crate::i18n::t("Nội dung thay thế, vd: Việt Nam"))
                                 .desired_width(f32::INFINITY),
                         );
                         add |= r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
                     });
                 });
-                add |= ui::primary_button(ui, "  Thêm  ").clicked();
+                add |= ui::primary_button(ui, crate::i18n::t("  Thêm  ")).clicked();
             });
             ui.add_space(8.0);
         });
@@ -564,7 +572,7 @@ impl SettingsApp {
         ui.add_space(6.0);
         ui.horizontal(|ui| {
             ui.label(
-                RichText::new(format!("Danh sách ({})", self.macros.len()))
+                RichText::new(crate::i18n::fill(crate::i18n::t("Danh sách ({})"), &[&self.macros.len()]))
                     .font(FontId::new(13.0, ui::semibold()))
                     .color(ui::MUTED),
             );
@@ -576,7 +584,7 @@ impl SettingsApp {
                             ui.add(
                                 TextEdit::singleline(&mut self.macro_filter)
                                     .frame(egui::Frame::NONE)
-                                    .hint_text("Tìm…")
+                                    .hint_text(crate::i18n::t("Tìm…"))
                                     .desired_width(f32::INFINITY),
                             );
                         });
@@ -597,7 +605,7 @@ impl SettingsApp {
             if items.is_empty() {
                 ui.add_space(14.0);
                 ui.vertical_centered(|ui| {
-                    ui.label(ui::muted(if self.macros.is_empty() { "Chưa có từ gõ tắt nào." } else { "Không tìm thấy." }));
+                    ui.label(ui::muted(if self.macros.is_empty() { crate::i18n::t("Chưa có từ gõ tắt nào.") } else { crate::i18n::t("Không tìm thấy.") }));
                 });
                 ui.add_space(14.0);
             }
@@ -613,7 +621,7 @@ impl SettingsApp {
                     });
                     ui.label(RichText::new(v).size(14.0));
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        if ui::icon_button(ui, icon::DELETE, ui::DANGER).on_hover_text("Xoá").clicked() {
+                        if ui::icon_button(ui, icon::DELETE, ui::DANGER).on_hover_text(crate::i18n::t("Xoá")).clicked() {
                             remove = Some(k.clone());
                         }
                     });
@@ -625,22 +633,22 @@ impl SettingsApp {
             self.save_macros();
         }
         ui.horizontal(|ui| {
-            if ui::button(ui, Some(icon::FOLDER), "Mở file gõ tắt").clicked() {
+            if ui::button(ui, Some(icon::FOLDER), crate::i18n::t("Mở file gõ tắt")).clicked() {
                 if !config::macros_path().exists() {
                     let _ = config::save_macros(&self.macros);
                 }
                 win::shell_open(&config::macros_path());
             }
-            if ui::button(ui, Some(icon::REFRESH), "Nạp lại từ file").clicked() {
+            if ui::button(ui, Some(icon::REFRESH), crate::i18n::t("Nạp lại từ file")).clicked() {
                 self.macros = config::load_macros(self.cfg.macro_auto_case);
                 win::notify_service(win::WM_CINPUT_RELOAD);
                 self.toast("Đã nạp lại bảng gõ tắt");
             }
         });
         ui.horizontal_wrapped(|ui| {
-            if ui::button(ui, Some(icon::PASTE), "Nhập từ file…").on_hover_text("Thêm gõ tắt từ file UniKey / C_Input").clicked() {
-                let filter = [("Bảng gõ tắt (*.txt)", "*.txt"), ("Mọi file", "*.*")];
-                if let Some(path) = win::file_dialog(false, "Nhập bảng gõ tắt", &filter, "") {
+            if ui::button(ui, Some(icon::PASTE), crate::i18n::t("Nhập từ file…")).on_hover_text(crate::i18n::t("Thêm gõ tắt từ file UniKey / C_Input")).clicked() {
+                let filter = [(crate::i18n::t("Bảng gõ tắt (*.txt)"), "*.txt"), (crate::i18n::t("Mọi file"), "*.*")];
+                if let Some(path) = win::file_dialog(false, crate::i18n::t("Nhập bảng gõ tắt"), &filter, "") {
                     match read_text_file(&path) {
                         Some(text) => {
                             let imported = cinput_core::MacroTable::parse(&text, self.cfg.macro_auto_case);
@@ -649,18 +657,18 @@ impl SettingsApp {
                                 self.macros.insert(k, v);
                             }
                             self.save_macros();
-                            self.toast(&format!("Đã nhập {n} gõ tắt"));
+                            self.toast(&crate::i18n::fill(crate::i18n::t("Đã nhập {} gõ tắt"), &[&n]));
                         }
                         None => self.toast("Không đọc được file"),
                     }
                 }
             }
-            if ui::button(ui, Some(icon::COPY), "Xuất ra file…").clicked() {
-                let filter = [("Bảng gõ tắt (*.txt)", "*.txt")];
-                if let Some(path) = win::file_dialog(true, "Xuất bảng gõ tắt", &filter, "c_input_macros.txt") {
+            if ui::button(ui, Some(icon::COPY), crate::i18n::t("Xuất ra file…")).clicked() {
+                let filter = [(crate::i18n::t("Bảng gõ tắt (*.txt)"), "*.txt")];
+                if let Some(path) = win::file_dialog(true, crate::i18n::t("Xuất bảng gõ tắt"), &filter, "c_input_macros.txt") {
                     match std::fs::write(&path, self.macros.serialize()) {
                         Ok(()) => self.toast("Đã xuất bảng gõ tắt"),
-                        Err(e) => self.toast(&format!("Không ghi được file: {e}")),
+                        Err(e) => self.toast(&crate::i18n::fill(crate::i18n::t("Không ghi được file: {}"), &[&e])),
                     }
                 }
             }
@@ -683,22 +691,22 @@ impl SettingsApp {
     }
 
     fn page_convert(&mut self, ui: &mut Ui) {
-        Self::header(ui, "Chuyển mã", "Chuyển văn bản giữa các bảng mã tiếng Việt: TCVN3, VNI, Unicode…");
+        Self::header(ui, crate::i18n::t("Chuyển mã"), crate::i18n::t("Chuyển văn bản giữa các bảng mã tiếng Việt: TCVN3, VNI, Unicode…"));
         let cfg = &mut self.cfg;
-        ui::card(ui, Some("Bảng mã"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Bảng mã")), |ui| {
             ui.add_space(8.0);
             ui.horizontal_wrapped(|ui| {
-                ui.label(ui::muted("Từ"));
-                egui::ComboBox::from_id_salt("from").selected_text(cfg.clip_from.label()).width(190.0).show_ui(ui, |ui| {
+                ui.label(ui::muted(crate::i18n::t("Từ")));
+                egui::ComboBox::from_id_salt("from").selected_text(crate::i18n::t(cfg.clip_from.label())).width(190.0).show_ui(ui, |ui| {
                     for c in Charset::ALL {
                         ui.selectable_value(&mut cfg.clip_from, c, c.label());
                     }
                 });
-                if ui::icon_button(ui, icon::SWAP, ui::ACCENT_HI).on_hover_text("Đảo chiều").clicked() {
+                if ui::icon_button(ui, icon::SWAP, ui::ACCENT_HI).on_hover_text(crate::i18n::t("Đảo chiều")).clicked() {
                     std::mem::swap(&mut cfg.clip_from, &mut cfg.clip_to);
                 }
                 ui.label(ui::muted("Sang"));
-                egui::ComboBox::from_id_salt("to").selected_text(cfg.clip_to.label()).width(190.0).show_ui(ui, |ui| {
+                egui::ComboBox::from_id_salt("to").selected_text(crate::i18n::t(cfg.clip_to.label())).width(190.0).show_ui(ui, |ui| {
                     for c in Charset::ALL {
                         ui.selectable_value(&mut cfg.clip_to, c, c.label());
                     }
@@ -706,31 +714,31 @@ impl SettingsApp {
             });
             ui.add_space(4.0);
             ui::row_sep(ui);
-            ui::row(ui, "Bỏ dấu", "Tiếng Việt → Tieng Viet", |ui| {
+            ui::row(ui, crate::i18n::t("Bỏ dấu"), crate::i18n::t("Tiếng Việt → Tieng Viet"), |ui| {
                 ui::toggle(ui, &mut self.conv_remove_tones);
             });
             ui::row_sep(ui);
-            ui::row(ui, "Chữ hoa / thường", "", |ui| {
+            ui::row(ui, crate::i18n::t("Chữ hoa / thường"), "", |ui| {
                 ui::segmented(
                     ui,
                     &mut self.conv_case,
-                    &[(CaseMode::Keep, "Giữ nguyên"), (CaseMode::Upper, "HOA"), (CaseMode::Lower, "thường")],
+                    &[(CaseMode::Keep, crate::i18n::t("Giữ nguyên")), (CaseMode::Upper, crate::i18n::t("HOA")), (CaseMode::Lower, crate::i18n::t("thường"))],
                 );
             });
         });
 
-        ui::card(ui, Some("Văn bản"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Văn bản")), |ui| {
             ui.add_space(8.0);
             let w = (ui.available_width() - 12.0) / 2.0;
             ui.horizontal_top(|ui| {
                 ui.allocate_ui_with_layout(vec2(w, 220.0), Layout::top_down(Align::Min), |ui| {
-                    ui.label(ui::muted("Nguồn"));
+                    ui.label(ui::muted(crate::i18n::t("Nguồn")));
                     ui::input_frame(ui, |ui| {
                         ScrollArea::vertical().id_salt("in").max_height(190.0).show(ui, |ui| {
                             ui.add(
                                 TextEdit::multiline(&mut self.conv_input)
                                     .frame(egui::Frame::NONE)
-                                    .hint_text("Dán văn bản cần chuyển vào đây…")
+                                    .hint_text(crate::i18n::t("Dán văn bản cần chuyển vào đây…"))
                                     .desired_rows(9)
                                     .desired_width(f32::INFINITY),
                             );
@@ -738,7 +746,7 @@ impl SettingsApp {
                     });
                 });
                 ui.allocate_ui_with_layout(vec2(w, 220.0), Layout::top_down(Align::Min), |ui| {
-                    ui.label(ui::muted("Kết quả"));
+                    ui.label(ui::muted(crate::i18n::t("Kết quả")));
                     ui::input_frame(ui, |ui| {
                         ScrollArea::vertical().id_salt("out").max_height(190.0).show(ui, |ui| {
                             ui.add(
@@ -753,15 +761,15 @@ impl SettingsApp {
             });
             ui.add_space(8.0);
             ui.horizontal(|ui| {
-                if ui::button(ui, Some(icon::PASTE), "Dán từ clipboard").clicked() {
+                if ui::button(ui, Some(icon::PASTE), crate::i18n::t("Dán từ clipboard")).clicked() {
                     if let Some(t) = win::clipboard_text(std::ptr::null_mut()) {
                         self.conv_input = t;
                     }
                 }
-                if ui::primary_button(ui, "  Chuyển mã  ").clicked() {
+                if ui::primary_button(ui, crate::i18n::t("  Chuyển mã  ")).clicked() {
                     self.conv_output = self.convert_text(&self.conv_input);
                 }
-                if ui::button(ui, Some(icon::COPY), "Chép kết quả").clicked()
+                if ui::button(ui, Some(icon::COPY), crate::i18n::t("Chép kết quả")).clicked()
                     && win::set_clipboard_text(std::ptr::null_mut(), &self.conv_output)
                 {
                     self.toast("Đã chép kết quả vào clipboard");
@@ -770,13 +778,13 @@ impl SettingsApp {
             ui.add_space(8.0);
         });
 
-        ui::card(ui, Some("Chuyển nhanh clipboard"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Chuyển nhanh clipboard")), |ui| {
             ui::row(
                 ui,
                 "Ctrl + Shift + F9",
-                "Bấm ở bất cứ đâu để chuyển mã nội dung clipboard theo hai bảng mã ở trên.",
+                crate::i18n::t("Bấm ở bất cứ đâu để chuyển mã nội dung clipboard theo hai bảng mã ở trên."),
                 |ui| {
-                    if ui::button(ui, Some(icon::PLAY), "Chuyển clipboard ngay").clicked() {
+                    if ui::button(ui, Some(icon::PLAY), crate::i18n::t("Chuyển clipboard ngay")).clicked() {
                         match win::clipboard_text(std::ptr::null_mut()) {
                             Some(t) => {
                                 let out = self.convert_text(&t);
@@ -794,13 +802,13 @@ impl SettingsApp {
     // ------------------------------------------------------------------ trang Ứng dụng
 
     fn page_apps(&mut self, ui: &mut Ui) {
-        Self::header(ui, "Ứng dụng", "Chế độ gõ riêng cho từng ứng dụng.");
+        Self::header(ui, crate::i18n::t("Ứng dụng"), crate::i18n::t("Chế độ gõ riêng cho từng ứng dụng."));
         let cfg = &mut self.cfg;
-        ui::card(ui, Some("Theo từng ứng dụng"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Theo từng ứng dụng")), |ui| {
             ui::row(
                 ui,
-                "Nhớ chế độ Anh/Việt cho từng ứng dụng",
-                "Mỗi cửa sổ giữ chế độ gõ riêng khi chuyển qua lại.",
+                crate::i18n::t("Nhớ chế độ Anh/Việt cho từng ứng dụng"),
+                crate::i18n::t("Mỗi cửa sổ giữ chế độ gõ riêng khi chuyển qua lại."),
                 |ui| {
                     ui::toggle(ui, &mut cfg.per_app);
                 },
@@ -808,9 +816,9 @@ impl SettingsApp {
             ui::row_sep(ui);
             ui::row(
                 ui,
-                "Sửa lỗi gợi ý tự động",
-                "Thanh địa chỉ trình duyệt và Excel hay bôi đen phần gợi ý, làm mất chữ khi bỏ dấu. \
-                 Áp dụng cho Chrome, Edge, Firefox, Cốc Cốc, Brave, Opera, Excel.",
+                crate::i18n::t("Sửa lỗi gợi ý tự động"),
+                crate::i18n::t("Thanh địa chỉ trình duyệt và Excel hay bôi đen phần gợi ý, làm mất chữ khi bỏ dấu. \
+                 Áp dụng cho Chrome, Edge, Firefox, Cốc Cốc, Brave, Opera, Excel."),
                 |ui| {
                     ui::toggle(ui, &mut cfg.browser_fix);
                 },
@@ -819,15 +827,15 @@ impl SettingsApp {
 
         let svc = win::find_service_window();
         let svc_elevated = !svc.is_null() && win::window_elevated(svc);
-        ui::card(ui, Some("Quyền Administrator"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Quyền Administrator")), |ui| {
             let desc = if svc_elevated {
-                "C_Input đang chạy với quyền Administrator: gõ được trong mọi ứng dụng, kể cả ứng dụng quyền Admin."
+                crate::i18n::t("C_Input đang chạy với quyền Administrator: gõ được trong mọi ứng dụng, kể cả ứng dụng quyền Admin.")
             } else {
-                "Windows không cho chương trình thường gõ vào ứng dụng chạy quyền Admin (Task Manager, \
-                 cmd quyền Admin, trình cài đặt…). C_Input sẽ tự tạm ngừng bỏ dấu ở đó và báo cho bạn."
+                crate::i18n::t("Windows không cho chương trình thường gõ vào ứng dụng chạy quyền Admin (Task Manager, \
+                 cmd quyền Admin, trình cài đặt…). C_Input sẽ tự tạm ngừng bỏ dấu ở đó và báo cho bạn.")
             };
-            ui::row(ui, if svc_elevated { "Đang chạy quyền Admin" } else { "Chạy thường" }, desc, |ui| {
-                if !svc_elevated && !svc.is_null() && ui::button(ui, None, "Chạy với quyền Admin").clicked() {
+            ui::row(ui, if svc_elevated { crate::i18n::t("Đang chạy quyền Admin") } else { crate::i18n::t("Chạy thường") }, desc, |ui| {
+                if !svc_elevated && !svc.is_null() && ui::button(ui, None, crate::i18n::t("Chạy với quyền Admin")).clicked() {
                     // Bản mới (quyền Admin, qua hộp thoại UAC) chờ bản hiện tại thoát rồi thay thế.
                     if win::run_elevated("--replace") {
                         unsafe {
@@ -846,8 +854,8 @@ impl SettingsApp {
         app_list_card(
             ui,
             "excluded",
-            "Luôn gõ tiếng Anh trong",
-            "Trong các ứng dụng này C_Input không bỏ dấu — hữu ích cho trình soạn code, game, terminal…",
+            crate::i18n::t("Luôn gõ tiếng Anh trong"),
+            crate::i18n::t("Trong các ứng dụng này C_Input không bỏ dấu — hữu ích cho trình soạn code, game, terminal…"),
             &mut self.cfg.excluded_apps,
             &self.running_apps,
             &mut self.new_app,
@@ -855,9 +863,9 @@ impl SettingsApp {
         app_list_card(
             ui,
             "clipboard",
-            "Gửi chữ qua clipboard",
-            "Phần mềm cũ không nhận chữ tiếng Việt từ bộ gõ (ra dấu hỏi, ô vuông)? Thêm vào đây: C_Input sẽ dán chữ \
-             qua clipboard rồi trả lại nội dung clipboard của bạn.",
+            crate::i18n::t("Gửi chữ qua clipboard"),
+            crate::i18n::t("Phần mềm cũ không nhận chữ tiếng Việt từ bộ gõ (ra dấu hỏi, ô vuông)? Thêm vào đây: C_Input sẽ dán chữ \
+             qua clipboard rồi trả lại nội dung clipboard của bạn."),
             &mut self.cfg.clipboard_apps,
             &self.running_apps,
             &mut self.new_clip_app,
@@ -870,11 +878,11 @@ impl SettingsApp {
         let actions = cinput_core::KeyAction::all();
         let mut changed = false;
         let mut action_msg: Option<String> = None;
-        ui::card(ui, Some("Bảng phím tự định nghĩa"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Bảng phím tự định nghĩa")), |ui| {
             ui.add_space(8.0);
             ui.add(egui::Label::new(ui::muted(
-                "Gõ một phím cho mỗi chức năng (để trống nếu không dùng). Lưu ngay khi sửa, dùng chung định dạng \
-                 file keymap.txt với UniKey.",
+                crate::i18n::t("Gõ một phím cho mỗi chức năng (để trống nếu không dùng). Lưu ngay khi sửa, dùng chung định dạng \
+                 file keymap.txt với UniKey."),
             )));
             ui.add_space(6.0);
             egui::Grid::new("keymap_grid").num_columns(4).spacing(vec2(12.0, 6.0)).show(ui, |ui| {
@@ -905,29 +913,29 @@ impl SettingsApp {
             });
             ui.add_space(8.0);
             ui.horizontal_wrapped(|ui| {
-                if ui::button(ui, Some(icon::PASTE), "Nạp từ file keymap.txt…").clicked() {
-                    let filter = [("Bảng phím UniKey (keymap.txt)", "*.txt"), ("Mọi file", "*.*")];
-                    if let Some(path) = win::file_dialog(false, "Nạp bảng phím", &filter, "keymap.txt") {
+                if ui::button(ui, Some(icon::PASTE), crate::i18n::t("Nạp từ file keymap.txt…")).clicked() {
+                    let filter = [(crate::i18n::t("Bảng phím UniKey (keymap.txt)"), "*.txt"), (crate::i18n::t("Mọi file"), "*.*")];
+                    if let Some(path) = win::file_dialog(false, crate::i18n::t("Nạp bảng phím"), &filter, "keymap.txt") {
                         match read_text_file(&path).map(|t| cinput_core::KeyMap::parse(&t)).filter(|m| !m.is_empty()) {
                             Some(m) => {
                                 self.keymap = m;
                                 changed = true;
-                                action_msg = Some("Đã nạp bảng phím".into());
+                                action_msg = Some(crate::i18n::t("Đã nạp bảng phím").into());
                             }
-                            None => action_msg = Some("File không có bảng phím hợp lệ".into()),
+                            None => action_msg = Some(crate::i18n::t("File không có bảng phím hợp lệ").into()),
                         }
                     }
                 }
-                if ui::button(ui, Some(icon::COPY), "Lưu ra file…").clicked() {
-                    let filter = [("Bảng phím (keymap.txt)", "*.txt")];
-                    if let Some(path) = win::file_dialog(true, "Lưu bảng phím", &filter, "keymap.txt") {
+                if ui::button(ui, Some(icon::COPY), crate::i18n::t("Lưu ra file…")).clicked() {
+                    let filter = [(crate::i18n::t("Bảng phím (keymap.txt)"), "*.txt")];
+                    if let Some(path) = win::file_dialog(true, crate::i18n::t("Lưu bảng phím"), &filter, "keymap.txt") {
                         action_msg = Some(match std::fs::write(&path, self.keymap.serialize()) {
-                            Ok(()) => "Đã lưu bảng phím".into(),
-                            Err(e) => format!("Không ghi được file: {e}"),
+                            Ok(()) => crate::i18n::t("Đã lưu bảng phím").into(),
+                            Err(e) => crate::i18n::fill(crate::i18n::t("Không ghi được file: {}"), &[&e]),
                         });
                     }
                 }
-                if ui::button(ui, Some(icon::REFRESH), "Đặt lại giống Telex").clicked() {
+                if ui::button(ui, Some(icon::REFRESH), crate::i18n::t("Đặt lại giống Telex")).clicked() {
                     self.keymap = cinput_core::KeyMap::telex_like();
                     changed = true;
                 }
@@ -940,10 +948,10 @@ impl SettingsApp {
                 Ok(()) => {
                     win::notify_service(win::WM_CINPUT_RELOAD);
                     if action_msg.is_none() {
-                        action_msg = Some("Đã lưu bảng phím".into());
+                        action_msg = Some(crate::i18n::t("Đã lưu bảng phím").into());
                     }
                 }
-                Err(e) => action_msg = Some(format!("Không lưu được: {e}")),
+                Err(e) => action_msg = Some(crate::i18n::fill(crate::i18n::t("Không lưu được: {}"), &[&e])),
             }
         }
         if let Some(m) = action_msg {
@@ -969,48 +977,48 @@ impl SettingsApp {
     }
 
     fn page_ai(&mut self, ui: &mut Ui) {
-        Self::header(ui, "Dịch AI", "Gõ xong một câu, C_Input tự dịch câu đó sang ngôn ngữ bạn chọn bằng Google Gemini.");
+        Self::header(ui, crate::i18n::t("Dịch AI"), crate::i18n::t("Gõ xong một câu, C_Input tự dịch câu đó sang ngôn ngữ bạn chọn bằng Google Gemini."));
         let search = &mut self.lang_search;
         let cfg = &mut self.cfg;
-        ui::card(ui, Some("Dịch tự động"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Dịch tự động")), |ui| {
             ui::row(
                 ui,
-                "Dịch câu vừa gõ",
-                "Kết thúc câu bằng . ? hoặc ! rồi dấu cách: câu đó được thay bằng bản dịch, bạn gõ tiếp câu sau \
-                 ngay, không phải chờ. Không dịch khi bấm Enter, trong ô mật khẩu và ứng dụng luôn gõ tiếng Anh.",
+                crate::i18n::t("Dịch câu vừa gõ"),
+                crate::i18n::t("Kết thúc câu bằng . ? hoặc ! rồi dấu cách: câu đó được thay bằng bản dịch, bạn gõ tiếp câu sau \
+                 ngay, không phải chờ. Không dịch khi bấm Enter, trong ô mật khẩu và ứng dụng luôn gõ tiếng Anh."),
                 |ui| {
                     ui::toggle(ui, &mut cfg.translate_enabled);
                 },
             );
             if cfg.translate_enabled {
                 ui::row_sep(ui);
-                ui::row(ui, "Dịch sang", "Ngôn ngữ đích của bản dịch. Gõ để tìm nhanh, không cần dấu.", |ui| {
+                ui::row(ui, crate::i18n::t("Dịch sang"), crate::i18n::t("Ngôn ngữ đích của bản dịch. Gõ để tìm nhanh, không cần dấu."), |ui| {
                     language_picker(ui, "tr_lang", &mut cfg.translate_lang, search);
                 });
             }
         });
         let read_search = &mut self.read_search;
         let cfg = &mut self.cfg;
-        ui::card(ui, Some("Dịch đoạn bôi đen"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Dịch đoạn bôi đen")), |ui| {
             ui::row(
                 ui,
-                "Bấm Ctrl+C hai lần để dịch",
-                "Bôi đen một đoạn chữ ở bất kỳ đâu (tin nhắn đến, trang web, tài liệu) rồi bấm Ctrl+C hai lần liền: \
-                 bản dịch hiện trong cửa sổ nhỏ cạnh con trỏ, đổi ngôn ngữ ngay trong đó. Văn bản gốc không bị sửa.",
+                crate::i18n::t("Bấm Ctrl+C hai lần để dịch"),
+                crate::i18n::t("Bôi đen một đoạn chữ ở bất kỳ đâu (tin nhắn đến, trang web, tài liệu) rồi bấm Ctrl+C hai lần liền: \
+                 bản dịch hiện trong cửa sổ nhỏ cạnh con trỏ, đổi ngôn ngữ ngay trong đó. Văn bản gốc không bị sửa."),
                 |ui| {
                     ui::toggle(ui, &mut cfg.read_enabled);
                 },
             );
             if cfg.read_enabled {
                 ui::row_sep(ui);
-                ui::row(ui, "Dịch sang", "Ngôn ngữ bạn đọc — thường là tiếng Việt.", |ui| {
+                ui::row(ui, crate::i18n::t("Dịch sang"), crate::i18n::t("Ngôn ngữ bạn đọc — thường là tiếng Việt."), |ui| {
                     language_picker(ui, "read_lang_settings", &mut cfg.read_lang, read_search);
                 });
             }
         });
         if !self.cfg.translate_enabled && !self.cfg.read_enabled {
             ui.add(egui::Label::new(ui::muted(
-                "Bật một trong hai tính năng trên để gắn API key Gemini. Khi tắt cả hai, C_Input không gửi gì lên mạng.",
+                crate::i18n::t("Bật một trong hai tính năng trên để gắn API key Gemini. Khi tắt cả hai, C_Input không gửi gì lên mạng."),
             )));
             return;
         }
@@ -1026,14 +1034,14 @@ impl SettingsApp {
                     let tail: String = k.chars().rev().take(4).collect::<Vec<_>>().into_iter().rev().collect();
                     ui.horizontal(|ui| {
                         ui.label(ui::icon_text(icon::CHECK, 13.0, ui::ACCENT_HI));
-                        ui.label(RichText::new(format!("Đã lưu key ••••{tail}")).size(14.0));
-                        ui.label(ui::muted("(mã hoá bằng Windows, chỉ tài khoản của bạn đọc được)"));
+                        ui.label(RichText::new(crate::i18n::fill(crate::i18n::t("Đã lưu key ••••{}"), &[&tail])).size(14.0));
+                        ui.label(ui::muted(crate::i18n::t("(mã hoá bằng Windows, chỉ tài khoản của bạn đọc được)")));
                     });
                 }
                 None => {
                     ui.horizontal(|ui| {
                         ui.label(ui::icon_text(icon::WARNING, 13.0, ui::WARN));
-                        ui.label(RichText::new("Chưa có API key").color(ui::WARN));
+                        ui.label(RichText::new(crate::i18n::t("Chưa có API key")).color(ui::WARN));
                     });
                 }
             }
@@ -1046,26 +1054,26 @@ impl SettingsApp {
                             TextEdit::singleline(&mut self.key_input)
                                 .password(true)
                                 .frame(egui::Frame::NONE)
-                                .hint_text(if saved.is_some() { "Dán key mới để thay" } else { "Dán API key Gemini vào đây" })
+                                .hint_text(if saved.is_some() { crate::i18n::t("Dán key mới để thay") } else { crate::i18n::t("Dán API key Gemini vào đây") })
                                 .desired_width(f32::INFINITY),
                         );
                         save |= r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
                     });
                 });
-                save |= ui::primary_button(ui, "  Lưu key  ").clicked();
+                save |= ui::primary_button(ui, crate::i18n::t("  Lưu key  ")).clicked();
                 if saved.is_some() {
-                    check |= ui::button(ui, Some(icon::REFRESH), "Kiểm tra").clicked();
-                    remove |= ui::icon_button(ui, icon::DELETE, ui::DANGER).on_hover_text("Xoá key").clicked();
+                    check |= ui::button(ui, Some(icon::REFRESH), crate::i18n::t("Kiểm tra")).clicked();
+                    remove |= ui::icon_button(ui, icon::DELETE, ui::DANGER).on_hover_text(crate::i18n::t("Xoá key")).clicked();
                 }
             });
             ui.horizontal(|ui| {
-                ui.label(ui::muted("Chưa có key? Tạo miễn phí tại"));
+                ui.label(ui::muted(crate::i18n::t("Chưa có key? Tạo miễn phí tại")));
                 ui.hyperlink_to("aistudio.google.com", crate::ai::KEY_URL);
             });
             if self.ai_busy {
                 ui.horizontal(|ui| {
                     ui.spinner();
-                    ui.label(ui::muted("Đang liên hệ Gemini…"));
+                    ui.label(ui::muted(crate::i18n::t("Đang liên hệ Gemini…")));
                 });
             } else if let Some((ok, msg)) = &self.ai_status {
                 ui.horizontal(|ui| {
@@ -1076,7 +1084,7 @@ impl SettingsApp {
             ui::row_sep(ui);
             let cfg = &mut self.cfg;
             let models = &self.models;
-            ui::row(ui, "Model", "Model \"flash\" nhanh và rẻ, hợp để dịch từng câu. Bấm Kiểm tra để lấy danh sách.", |ui| {
+            ui::row(ui, "Model", crate::i18n::t("Model \"flash\" nhanh và rẻ, hợp để dịch từng câu. Bấm Kiểm tra để lấy danh sách."), |ui| {
                 egui::ComboBox::from_id_salt("tr_model").selected_text(cfg.gemini_model.as_str()).width(210.0).show_ui(ui, |ui| {
                     if models.is_empty() {
                         ui.selectable_value(&mut cfg.gemini_model, crate::ai::DEFAULT_MODEL.to_string(), crate::ai::DEFAULT_MODEL);
@@ -1111,20 +1119,20 @@ impl SettingsApp {
         }
 
         let mut run_try = false;
-        ui::card(ui, Some("Dịch thử"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Dịch thử")), |ui| {
             ui.add_space(8.0);
             ui::input_frame(ui, |ui| {
                 ui.add(
                     TextEdit::multiline(&mut self.try_input)
                         .frame(egui::Frame::NONE)
-                        .hint_text("Gõ một câu để thử, ví dụ: Hôm nay trời đẹp quá.")
+                        .hint_text(crate::i18n::t("Gõ một câu để thử, ví dụ: Hôm nay trời đẹp quá."))
                         .desired_rows(2)
                         .desired_width(f32::INFINITY),
                 );
             });
             ui.add_space(4.0);
             ui.horizontal(|ui| {
-                run_try = ui::primary_button(ui, "  Dịch thử  ").clicked();
+                run_try = ui::primary_button(ui, crate::i18n::t("  Dịch thử  ")).clicked();
                 ui.label(ui::muted(&format!("→ {}", crate::ai::language_label(&self.cfg.translate_lang))));
             });
             if !self.try_output.is_empty() {
@@ -1166,16 +1174,16 @@ impl SettingsApp {
             }
             ui.add_space(6.0);
             ui.label(ui::title("C_Input", 28.0));
-            ui.label(ui::muted(&format!("Phiên bản {}", env!("CARGO_PKG_VERSION"))));
+            ui.label(ui::muted(&crate::i18n::fill(crate::i18n::t("Phiên bản {}"), &[&env!("CARGO_PKG_VERSION")])));
             ui.add_space(4.0);
-            ui.label(RichText::new("Bộ gõ tiếng Việt cho Windows — nhẹ, nhanh, chạy hoàn toàn trên máy.").color(ui::MUTED));
+            ui.label(RichText::new(crate::i18n::t("Bộ gõ tiếng Việt cho Windows — nhẹ, nhanh, chạy hoàn toàn trên máy.")).color(ui::MUTED));
         });
         ui.add_space(14.0);
-        ui::card(ui, Some("Phím tắt"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Phím tắt")), |ui| {
             let rows: [(&[&str], &str); 3] = [
-                (&[self.cfg.switch_key.label()], "Bật/tắt gõ tiếng Việt"),
-                (&["Ctrl", "Shift", "F5"], "Mở cửa sổ cài đặt"),
-                (&["Ctrl", "Shift", "F9"], "Chuyển mã clipboard"),
+                (&[self.cfg.switch_key.label()], crate::i18n::t("Bật/tắt gõ tiếng Việt")),
+                (&["Ctrl", "Shift", "F5"], crate::i18n::t("Mở cửa sổ cài đặt")),
+                (&["Ctrl", "Shift", "F9"], crate::i18n::t("Chuyển mã clipboard")),
             ];
             for (i, (keys, what)) in rows.iter().enumerate() {
                 if i > 0 {
@@ -1196,11 +1204,11 @@ impl SettingsApp {
         let mut check = false;
         let mut install = false;
         let cfg = &mut self.cfg;
-        ui::card(ui, Some("Cập nhật"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Cập nhật")), |ui| {
             ui::row(
                 ui,
-                "Tự kiểm tra bản mới",
-                "Mỗi ngày hỏi GitHub một lần, có bản mới thì báo ở khay hệ thống. Không tự cài.",
+                crate::i18n::t("Tự kiểm tra bản mới"),
+                crate::i18n::t("Mỗi ngày hỏi GitHub một lần, có bản mới thì báo ở khay hệ thống. Không tự cài."),
                 |ui| {
                     ui::toggle(ui, &mut cfg.auto_update);
                 },
@@ -1208,21 +1216,21 @@ impl SettingsApp {
             ui::row_sep(ui);
             ui.add_space(8.0);
             ui.horizontal_wrapped(|ui| {
-                if ui.add_enabled(!self.update_busy, egui::Button::new("Kiểm tra cập nhật")).clicked() {
+                if ui.add_enabled(!self.update_busy, egui::Button::new(crate::i18n::t("Kiểm tra cập nhật"))).clicked() {
                     check = true;
                 }
                 if let Some(rel) = &self.update_release {
-                    let label = format!("Cập nhật lên {}", rel.version);
+                    let label = crate::i18n::fill(crate::i18n::t("Cập nhật lên {}"), &[&rel.version]);
                     if ui.add_enabled(!self.update_busy, egui::Button::new(RichText::new(label).color(ui::ACCENT_HI))).clicked() {
                         install = true;
                     }
                 }
-                ui.hyperlink_to("Xem các bản phát hành", crate::update::RELEASES_URL);
+                ui.hyperlink_to(crate::i18n::t("Xem các bản phát hành"), crate::update::RELEASES_URL);
             });
             if self.update_busy {
                 ui.horizontal(|ui| {
                     ui.spinner();
-                    ui.label(ui::muted("Đang liên hệ GitHub…"));
+                    ui.label(ui::muted(crate::i18n::t("Đang liên hệ GitHub…")));
                 });
             } else if let Some((ok, msg)) = &self.update_status {
                 ui.add(egui::Label::new(RichText::new(msg).color(if *ok { ui::MUTED } else { ui::DANGER })).wrap());
@@ -1235,7 +1243,7 @@ impl SettingsApp {
                         });
                     });
                 }
-                ui.label(ui::muted("Khi cập nhật: tải bản mới, kiểm tra mã SHA-256, thay file rồi khởi động lại C_Input."));
+                ui.label(ui::muted(crate::i18n::t("Khi cập nhật: tải bản mới, kiểm tra mã SHA-256, thay file rồi khởi động lại C_Input.")));
             }
             ui.add_space(8.0);
         });
@@ -1258,13 +1266,13 @@ impl SettingsApp {
             }
         }
 
-        ui::card(ui, Some("Thông tin"), |ui| {
+        ui::card(ui, Some(crate::i18n::t("Thông tin")), |ui| {
             ui.add_space(8.0);
             for line in [
-                "Lõi gõ viết bằng Rust: Telex, VNI, đặt dấu tự do, kiểm tra chính tả, tự khôi phục từ tiếng Anh.",
-                "Không gửi dữ liệu ra ngoài, không cần mạng.",
-                "Bảng mã TCVN3 / VNI Windows tham khảo từ mã nguồn UniKey 3.62 của Phạm Kim Long (GPL).",
-                "Cấu hình lưu tại %APPDATA%\\C_Input.",
+                crate::i18n::t("Lõi gõ viết bằng Rust: Telex, VNI, đặt dấu tự do, kiểm tra chính tả, tự khôi phục từ tiếng Anh."),
+                crate::i18n::t("Không gửi dữ liệu ra ngoài, không cần mạng."),
+                crate::i18n::t("Bảng mã TCVN3 / VNI Windows tham khảo từ mã nguồn UniKey 3.62 của Phạm Kim Long (GPL)."),
+                crate::i18n::t("Cấu hình lưu tại %APPDATA%\\C_Input."),
             ] {
                 ui.horizontal(|ui| {
                     ui.label(ui::icon_text(icon::CHECK, 12.0, ui::ACCENT_HI));
@@ -1272,7 +1280,7 @@ impl SettingsApp {
                 });
             }
             ui.add_space(4.0);
-            if ui::button(ui, Some(icon::FOLDER), "Mở thư mục cấu hình").clicked() {
+            if ui::button(ui, Some(icon::FOLDER), crate::i18n::t("Mở thư mục cấu hình")).clicked() {
                 let _ = std::fs::create_dir_all(config::data_dir());
                 win::shell_open(&config::data_dir());
             }
@@ -1327,7 +1335,7 @@ impl eframe::App for SettingsApp {
                         }
                     }
                     self.models = list;
-                    self.ai_status = Some((true, format!("API key hoạt động — {n} model dùng được.")));
+                    self.ai_status = Some((true, crate::i18n::fill(crate::i18n::t("API key hoạt động — {} model dùng được."), &[&n])));
                 }
                 AiMsg::Models(Err(e)) => self.ai_status = Some((false, e)),
                 AiMsg::Translated(Ok(t)) => self.try_output = t,
@@ -1336,11 +1344,11 @@ impl eframe::App for SettingsApp {
                     self.update_busy = false;
                     match r {
                         Ok(Some(rel)) => {
-                            self.update_status = Some((true, format!("Đã có bản {} (bạn đang dùng {}).", rel.version, env!("CARGO_PKG_VERSION"))));
+                            self.update_status = Some((true, crate::i18n::fill(crate::i18n::t("Đã có bản {} (bạn đang dùng {})."), &[&rel.version, &env!("CARGO_PKG_VERSION")])));
                             self.update_release = Some(rel);
                         }
                         Ok(None) => {
-                            self.update_status = Some((true, format!("Bạn đang dùng bản mới nhất ({}).", env!("CARGO_PKG_VERSION"))));
+                            self.update_status = Some((true, crate::i18n::fill(crate::i18n::t("Bạn đang dùng bản mới nhất ({})."), &[&env!("CARGO_PKG_VERSION")])));
                             self.update_release = None;
                         }
                         Err(e) => self.update_status = Some((false, e)),
@@ -1429,7 +1437,7 @@ pub(crate) fn language_picker(ui: &mut Ui, id: &str, selected: &mut String, sear
                     ui.add(
                         TextEdit::singleline(search)
                             .frame(egui::Frame::NONE)
-                            .hint_text(format!("Tìm trong {} ngôn ngữ… (vd: dai loan, japan)", all.len()))
+                            .hint_text(crate::i18n::fill(crate::i18n::t("Tìm trong {} ngôn ngữ… (vd: dai loan, japan)"), &[&all.len()]))
                             .desired_width(f32::INFINITY),
                     )
                 })
@@ -1453,9 +1461,9 @@ pub(crate) fn language_picker(ui: &mut Ui, id: &str, selected: &mut String, sear
                 picked = matches.first().map(|&i| all[i].0.to_string()).or_else(|| custom.clone());
             }
             if let Some(c) = &custom {
-                let text = format!("Dùng ngôn ngữ «{c}»");
+                let text = crate::i18n::fill(crate::i18n::t("Dùng ngôn ngữ «{}»"), &[&c]);
                 if ui.selectable_label(selected.as_str() == c, RichText::new(text).color(ui::ACCENT_HI))
-                    .on_hover_text("Không có trong danh sách: gửi nguyên tên này cho Gemini")
+                    .on_hover_text(crate::i18n::t("Không có trong danh sách: gửi nguyên tên này cho Gemini"))
                     .clicked()
                 {
                     picked = Some(c.clone());
@@ -1464,10 +1472,11 @@ pub(crate) fn language_picker(ui: &mut Ui, id: &str, selected: &mut String, sear
             }
             if matches.is_empty() && custom.is_none() {
                 ui.add_space(8.0);
-                ui.label(ui::muted("Không tìm thấy ngôn ngữ phù hợp."));
+                ui.label(ui::muted(crate::i18n::t("Không tìm thấy ngôn ngữ phù hợp.")));
             }
             for &i in &matches {
                 let (name, label) = all[i];
+                let label = if crate::i18n::is_en() { name } else { label };
                 if query.is_empty() && i == POPULAR_LANGUAGES {
                     ui.separator();
                 }
@@ -1520,7 +1529,7 @@ fn app_list_card(
         ui.add(egui::Label::new(ui::muted(desc)).wrap());
         ui.add_space(4.0);
         ui.horizontal_wrapped(|ui| {
-            egui::ComboBox::from_id_salt(("running", id)).selected_text("Chọn ứng dụng đang mở…").width(230.0).show_ui(
+            egui::ComboBox::from_id_salt(("running", id)).selected_text(crate::i18n::t("Chọn ứng dụng đang mở…")).width(230.0).show_ui(
                 ui,
                 |ui| {
                     for a in running {
@@ -1530,14 +1539,14 @@ fn app_list_card(
                     }
                 },
             );
-            ui.label(ui::muted("hoặc"));
+            ui.label(ui::muted(crate::i18n::t("hoặc")));
             ui.allocate_ui(vec2(190.0, 34.0), |ui| {
                 ui::input_frame(ui, |ui| {
                     let r = ui.add(
                         TextEdit::singleline(new_text)
                             .id_salt(("app_input", id))
                             .frame(egui::Frame::NONE)
-                            .hint_text("tên file, vd: code.exe")
+                            .hint_text(crate::i18n::t("tên file, vd: code.exe"))
                             .desired_width(f32::INFINITY),
                     );
                     if r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
@@ -1545,7 +1554,7 @@ fn app_list_card(
                     }
                 });
             });
-            if ui::primary_button(ui, "  Thêm  ").clicked() {
+            if ui::primary_button(ui, crate::i18n::t("  Thêm  ")).clicked() {
                 add = Some(new_text.clone());
             }
         });
@@ -1553,7 +1562,7 @@ fn app_list_card(
         if list.is_empty() {
             ui::row_sep(ui);
             ui.add_space(12.0);
-            ui.vertical_centered(|ui| ui.label(ui::muted("Chưa có ứng dụng nào.")));
+            ui.vertical_centered(|ui| ui.label(ui::muted(crate::i18n::t("Chưa có ứng dụng nào."))));
             ui.add_space(12.0);
         }
         for (i, a) in list.iter().enumerate() {
@@ -1565,7 +1574,7 @@ fn app_list_card(
                 });
                 ui.label(RichText::new(a).size(14.0));
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                    if ui::icon_button(ui, icon::DELETE, ui::DANGER).on_hover_text("Bỏ khỏi danh sách").clicked() {
+                    if ui::icon_button(ui, icon::DELETE, ui::DANGER).on_hover_text(crate::i18n::t("Bỏ khỏi danh sách")).clicked() {
                         remove = Some(i);
                     }
                 });
@@ -1595,7 +1604,7 @@ pub fn run(page: Option<String>) {
     unsafe {
         use windows_sys::Win32::UI::WindowsAndMessaging::{FindWindowW, SW_RESTORE, SetForegroundWindow, ShowWindow};
         let h = FindWindowW(std::ptr::null(), title.as_ptr());
-        if !h.is_null() {
+        if !h.is_null() && std::env::var_os("CINPUT_TEST_MULTI").is_none() {
             ShowWindow(h, SW_RESTORE);
             SetForegroundWindow(h);
             return;

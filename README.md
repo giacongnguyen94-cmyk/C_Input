@@ -16,7 +16,11 @@ bất kỳ rồi chạy (không cần cài đặt). Yêu cầu Windows 10/11, 64
 
 ## Tính năng
 
-- **Kiểu gõ:** Telex, VNI, Telex đơn giản. Gõ dấu tự do (`tiengs` → tiếng), bấm lặp để bỏ dấu (`ass` → as).
+- **Kiểu gõ:** Telex, VNI, Telex đơn giản, VIQR (`Vie^.t` → Việt) và **tự định nghĩa** (gán phím cho từng chức năng,
+  đọc/ghi file `keymap.txt` của UniKey). Gõ dấu tự do (`tiengs` → tiếng) hoặc tắt để dấu mũ/móc phải gõ ngay sau chữ;
+  bấm lặp để bỏ dấu (`ass` → as).
+- **Phím Esc khôi phục:** bấm Esc ngay sau một từ để đổi qua lại giữa tiếng Việt và đúng các phím đã gõ
+  (`tieengs` → tiếng → Esc → tieengs); cũng hoàn tác gõ tắt.
 - **Đặt dấu** kiểu mới (hoà, thuý) hoặc kiểu cũ (hòa, thúy).
 - **Kiểm tra chính tả:** không bỏ dấu vào từ sai, tự trả lại phím gốc cho từ tiếng Anh (`windows`, `text`, `user`).
 - **Từ tiếng Anh giữ nguyên:** gõ đúng một từ trong danh sách (`test`, `error`, `password`, `data`, kể cả dạng
@@ -35,9 +39,14 @@ bất kỳ rồi chạy (không cần cài đặt). Yêu cầu Windows 10/11, 64
 - **Tự viết hoa đầu câu** và **tự tắt tiếng Việt trong ô mật khẩu** (Win32 + UI Automation).
 - **Xoá lùi về từ trước:** gõ `a` + dấu cách, xoá dấu cách rồi gõ `s` → "á" (sửa tiếp được từ vừa gõ, nhớ tối đa 32 từ).
   Bấm chuột, phím mũi tên, Enter, Tab hay đổi cửa sổ thì quên các từ trước để không sửa nhầm chỗ khác.
-- **Bảng mã khi gõ:** Unicode dựng sẵn, Unicode tổ hợp, TCVN3 (ABC), VNI Windows, VIQR.
-- **Gõ tắt** (tương thích file UniKey `từ:nội dung`), tự viết hoa theo chữ gõ: `vn` → việt nam, `VN` → VIỆT NAM.
-- **Chuyển mã** văn bản / clipboard giữa 7 bảng mã, bỏ dấu, đổi hoa/thường.
+- **Bảng mã khi gõ:** Unicode dựng sẵn / tổ hợp, TCVN3 (ABC), VNI Windows, VIQR, VISCII, VPS, BK HCM 1/2,
+  Vietware F/X, Windows CP1258, NCR thập phân / thập lục phân.
+- **Gửi chữ qua clipboard** cho phần mềm cũ không nhận Unicode từ bộ gõ (dán rồi trả lại clipboard của bạn).
+- **Gõ tắt** (tương thích file UniKey `từ:nội dung`, nhập/xuất file), tự viết hoa theo chữ gõ: `vn` → việt nam, `VN` → VIỆT NAM.
+- **Chuyển mã** văn bản / clipboard giữa 16 bảng mã (thêm UTF-8 Literal để sửa chữ bị lỗi font, C String `\uXXXX`),
+  bỏ dấu, đổi hoa/thường.
+- **Tự kiểm tra bản mới** trên GitHub mỗi ngày; cập nhật trong Cài đặt → Giới thiệu (kiểm tra SHA-256 trước khi thay file).
+- **Giao diện tiếng Việt / English.**
 - **Theo ứng dụng:** nhớ chế độ Anh/Việt cho từng ứng dụng, danh sách ứng dụng luôn gõ tiếng Anh.
 - Biểu tượng khay hệ thống (bấm để bật/tắt, chuột phải để mở menu), khởi động cùng Windows.
 - **Ổn định:** tự cài lại hook bàn phím nếu Windows gỡ mất (kiểm tra mỗi giây); sửa lỗi gợi ý tự động

@@ -24,6 +24,7 @@ use windows_sys::Win32::UI::WindowsAndMessaging::*;
 use crate::config::{self, Config, Method, SwitchKey};
 use crate::password;
 use crate::ai;
+use crate::i18n::{fill, t};
 use crate::win::{
     self, WM_CINPUT_CONVERT_CLIPBOARD, WM_CINPUT_PASSWORD, WM_CINPUT_RELOAD, WM_CINPUT_TRANSLATED, WM_CINPUT_UPDATE, wide,
 };
@@ -125,6 +126,7 @@ impl Service {
         self.engine.english = config::load_english();
         self.engine.auto_capitalize = self.cfg.auto_capitalize;
         self.api_key = ai::unprotect_key(&self.cfg.gemini_key);
+        crate::i18n::set_lang(&self.cfg.ui_lang);
         self.register_hotkeys();
         self.update_tray(false);
     }
@@ -173,18 +175,18 @@ impl Service {
 
     fn tooltip(&self) -> String {
         if self.in_password() && self.cfg.vietnamese {
-            return "C_Input — đang nhập mật khẩu: tạm gõ tiếng Anh".to_string();
+            return t("C_Input — đang nhập mật khẩu: tạm gõ tiếng Anh").to_string();
         }
         if self.cur_blocked && self.cfg.vietnamese {
-            return format!("C_Input — không gõ được vào {} (ứng dụng chạy quyền Admin)", self.cur_exe);
+            return fill(t("C_Input — không gõ được vào {} (ứng dụng chạy quyền Admin)"), &[&self.cur_exe]);
         }
         if self.cfg.is_excluded(&self.cur_exe) {
-            return format!("C_Input — Tiếng Anh ({} luôn gõ tiếng Anh)", self.cur_exe);
+            return fill(t("C_Input — Tiếng Anh ({} luôn gõ tiếng Anh)"), &[&self.cur_exe]);
         }
         if self.cfg.vietnamese {
-            format!("C_Input — Tiếng Việt\n{} · {}", self.cfg.method.label(), self.cfg.charset.short())
+            fill(t("C_Input — Tiếng Việt\n{} · {}"), &[&t(self.cfg.method.label()), &t(self.cfg.charset.short())])
         } else {
-            format!("C_Input — Tiếng Anh\nBấm {} để chuyển", self.cfg.switch_key.label())
+            fill(t("C_Input — Tiếng Anh\nBấm {} để chuyển"), &[&self.cfg.switch_key.label()])
         }
     }
 
@@ -201,8 +203,8 @@ impl Service {
         let mut nid = self.tray_data();
         nid.uFlags = NIF_INFO;
         nid.dwInfoFlags = NIIF_INFO;
-        copy_wstr(&mut nid.szInfoTitle, title);
-        copy_wstr(&mut nid.szInfo, text);
+        copy_wstr(&mut nid.szInfoTitle, t(title));
+        copy_wstr(&mut nid.szInfo, t(text));
         unsafe { Shell_NotifyIconW(NIM_MODIFY, &nid) };
     }
 
@@ -212,7 +214,7 @@ impl Service {
             Some(text) => {
                 let out = convert(&text, from, to);
                 if win::set_clipboard_text(self.hwnd, &out) {
-                    self.notify("Đã chuyển mã clipboard", &format!("{} → {}", from.label(), to.label()));
+                    self.notify("Đã chuyển mã clipboard", &format!("{} → {}", t(from.label()), t(to.label())));
                 }
             }
             None => self.notify("Clipboard trống", "Hãy chép (Ctrl+C) đoạn văn bản cần chuyển mã trước."),
@@ -232,7 +234,7 @@ impl Service {
         test_log(&format!("foreground: {exe} blocked={blocked}"));
         if blocked && self.cfg.vietnamese && !exe.is_empty() && self.warned.insert(exe.clone()) {
             self.notify(
-                &format!("Không gõ được tiếng Việt trong {exe}"),
+                &fill(t("Không gõ được tiếng Việt trong {}"), &[&exe]),
                 "Ứng dụng này chạy với quyền Administrator. Chuột phải biểu tượng C_Input → \
                  \"Chạy với quyền Administrator\" để gõ được.",
             );
@@ -881,32 +883,32 @@ fn show_menu(hwnd: HWND) {
     unsafe {
         let menu = CreatePopupMenu();
         let item = |m: HMENU, id: usize, text: &str, checked: bool| {
-            let t = wide(text);
-            AppendMenuW(m, MF_STRING | if checked { MF_CHECKED } else { MF_UNCHECKED }, id, t.as_ptr());
+            let w = wide(t(text));
+            AppendMenuW(m, MF_STRING | if checked { MF_CHECKED } else { MF_UNCHECKED }, id, w.as_ptr());
         };
         let sep = |m: HMENU| {
             AppendMenuW(m, MF_SEPARATOR, 0, null());
         };
-        item(menu, ID_TOGGLE, &format!("Gõ tiếng Việt\t{}", cfg.switch_key.label()), active);
+        item(menu, ID_TOGGLE, &fill(t("Gõ tiếng Việt\t{}"), &[&cfg.switch_key.label()]), active);
         sep(menu);
 
         let methods = CreatePopupMenu();
         for (i, m) in Method::ALL.iter().enumerate() {
-            item(methods, ID_METHOD + i, m.label(), *m == cfg.method);
+            item(methods, ID_METHOD + i, t(m.label()), *m == cfg.method);
         }
         let charsets = CreatePopupMenu();
         for (i, c) in Charset::TYPING.iter().enumerate() {
-            item(charsets, ID_CHARSET + i, c.label(), *c == cfg.charset);
+            item(charsets, ID_CHARSET + i, t(c.label()), *c == cfg.charset);
         }
-        let t = wide(&format!("Kiểu gõ: {}", cfg.method.label()));
-        AppendMenuW(menu, MF_POPUP, methods as usize, t.as_ptr());
-        let t = wide(&format!("Bảng mã: {}", cfg.charset.label()));
-        AppendMenuW(menu, MF_POPUP, charsets as usize, t.as_ptr());
+        let label = wide(&fill(t("Kiểu gõ: {}"), &[&t(cfg.method.label())]));
+        AppendMenuW(menu, MF_POPUP, methods as usize, label.as_ptr());
+        let label = wide(&fill(t("Bảng mã: {}"), &[&t(cfg.charset.label())]));
+        AppendMenuW(menu, MF_POPUP, charsets as usize, label.as_ptr());
         sep(menu);
         item(
             menu,
             ID_TRANSLATE,
-            &format!("Dịch AI tự động → {}", ai::language_label(&cfg.translate_lang)),
+            &fill(t("Dịch AI tự động → {}"), &[&ai::language_label(&cfg.translate_lang)]),
             cfg.translate_enabled,
         );
         item(menu, ID_READ, "Dịch nội dung clipboard…", false);
@@ -1048,7 +1050,7 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
             let v = unsafe { Box::from_raw(lparam as *mut String) };
             with_state(|s| {
                 s.notify(
-                    &format!("Đã có C_Input {v}"),
+                    &fill(t("Đã có C_Input {}"), &[&v]),
                     "Mở Cài đặt → Giới thiệu → Cập nhật để cài bản mới (kiểm tra SHA-256 trước khi cài).",
                 )
             });
@@ -1155,6 +1157,7 @@ pub fn run(replace: bool) {
         engine.english = config::load_english();
         engine.auto_capitalize = cfg.auto_capitalize;
         let api_key = ai::unprotect_key(&cfg.gemini_key);
+        crate::i18n::set_lang(&cfg.ui_lang);
         engine.vietnamese = cfg.vietnamese;
         let svc = Service {
             hwnd,

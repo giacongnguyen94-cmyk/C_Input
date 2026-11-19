@@ -7,6 +7,7 @@
 
 mod ai;
 mod config;
+mod i18n;
 mod password;
 mod popup;
 mod update;
