@@ -75,7 +75,9 @@ bộ gõ khi đó nhận cả phím do script gửi và ghi nhật ký vào `%TE
 cargo build --release
 ```
 
-File chạy: `target/release/C_Input.exe` (một file duy nhất, có sẵn icon). Tạo lại logo/icon: `python branding/make_logo.py`.
+File chạy: `target/release/C_Input.exe` (một file duy nhất, có sẵn icon). Bản phát hành:
+`powershell -ExecutionPolicy Bypass -File toolsuild_release.ps1` — build không nhúng đường dẫn thư mục của máy build
+(tên người dùng, ổ đĩa) vào file chạy, kèm SHA256SUMS.txt. Tạo lại logo/icon: `python branding/make_logo.py`.
 
 ## Giấy phép và ghi công
 
