@@ -1,0 +1,49 @@
+[package]
+name = "c_input"
+description = "C_Input — bộ gõ tiếng Việt cho Windows"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+build = "build.rs"
+
+[[bin]]
+name = "C_Input"
+path = "src/main.rs"
+
+[dependencies]
+cinput-core.workspace = true
+cinput-charset.workspace = true
+serde = { version = "1", features = ["derive"] }
+toml = "1"
+serde_json = "1"
+eframe = { version = "0.36", default-features = false, features = ["glow", "default_fonts", "accesskit"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+windows = { version = "0.62", features = ["Win32_System_Com", "Win32_UI_Accessibility"] }
+
+[dependencies.windows-sys]
+version = "0.61"
+features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Dwm",
+    "Win32_Networking_WinHttp",
+    "Win32_Security_Cryptography",
+    "Win32_Graphics_Gdi",
+    "Win32_System_DataExchange",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Memory",
+    "Win32_System_Ole",
+    "Win32_Security",
+    "Win32_System_Registry",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Win32_UI_Accessibility",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+]
+
+[build-dependencies]
+winresource = "0.1"

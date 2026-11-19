@@ -1,0 +1,22 @@
+[workspace]
+resolver = "3"
+members = ["crates/cinput-core", "crates/cinput-charset", "app"]
+
+[workspace.package]
+version = "1.0.0"
+edition = "2024"
+authors = ["C_Input"]
+publish = false
+license = "GPL-3.0-or-later"
+repository = "https://github.com/giacongnguyen94-cmyk/C_Input"
+
+[workspace.dependencies]
+cinput-core = { path = "crates/cinput-core" }
+cinput-charset = { path = "crates/cinput-charset" }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

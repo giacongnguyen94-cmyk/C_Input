@@ -1,0 +1,12 @@
+[package]
+name = "cinput-charset"
+description = "Chuyển đổi bảng mã tiếng Việt: Unicode, Unicode tổ hợp, TCVN3 (ABC), VNI Windows, VIQR, NCR"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+cinput-core.workspace = true
+serde = { version = "1", features = ["derive"] }

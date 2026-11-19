@@ -1,0 +1,16 @@
+# Build
+target/
+*.tmp
+
+# Bản build phát hành (đưa lên GitHub Releases, không commit)
+dist/
+
+# Mã nguồn UniKey 3.62 gốc — chỉ dùng tham khảo khi phát triển, không phân phối lại
+Uk362/
+
+# Hệ thống
+Thumbs.db
+Desktop.ini
+
+# Python
+__pycache__/

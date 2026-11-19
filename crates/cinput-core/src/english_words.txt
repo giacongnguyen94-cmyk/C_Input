@@ -1,0 +1,80 @@
+# Từ tiếng Anh thông dụng: gõ đúng một trong các từ này (chế độ Telex) thì C_Input giữ nguyên tiếng Anh
+# khi kết thúc từ, dù Telex biến được thành âm tiết tiếng Việt (vd: test → không thành "tét").
+# Quy tắc: không từ nào được trùng cách gõ thông thường của một âm tiết tiếng Việt (vd "its" là cách gõ "ít")
+# — bài test english_list_never_blocks_vietnamese kiểm tra điều này.
+# Đã bỏ vì trùng cách gõ một từ tiếng Việt có thật: air(ải) bar(bả) been(bên) box(bõ) car(cả) chair(chải)
+#   low(lơ) max(mã) now(nơ) row(rơ) see(sê) tree(trê) var(vả) room(rôm).
+# Mỗi dòng một từ, viết thường.
+
+about above access account across action active actually add added address admin after again against age ago
+agree ahead all allow almost alone along already also always am among amount and android angle another
+answer any anyone anything api app apple application apply april area around array art article artist ask asked
+assert assets assign async at attach attack audio august author auto available avoid await away
+back backend background backup bad bag balance bank base basic batch be beautiful because become bed
+before begin behind being believe below benefit best better between big bill bit black block blog blue board
+body book boolean boost border boss both bottom brand break bridge bring broken browser budget buffer bug
+build builder built business busy but button buy by byte
+cache calendar call called camera campaign can cancel cannot capital card care career careful case cash cast
+catch category cause cell center central certain chain challenge change channel chart chat cheap check
+checkout chief child choice choose chrome city claim class clean clear click client close cloud club code coffee
+collect color column combo come comment commit common community company compare compile complete component
+computer concept config confirm connect console const constant contact content context continue contract control
+cookie copy core corner correct cost could count country course cover create created credit crop css current
+custom customer cut
+daily damage dark dashboard data database date day dead deal dear debug decide decision deep default define
+delete deliver delivery demo deploy describe design desk desktop detail develop developer device dialog did
+different digital direct direction director disable discount disk display distance doc docker document does
+doing domain done door double down download draft drag draw drive driver drop due during
+each early earth easy edge edit editor effect effort either element else email embed empty enable end engine
+english enjoy enough enter entry environment equal error escape even event every everything exact example excel
+except exception exchange exist exit expect expense expert export express extend external extra
+face facebook fact factor fail failed fair false family fast feature february fee feedback feel fetch few field
+figure file files fill filter final finance find fine finish fire first fix fixed flag flash flex float floor
+flow focus folder follow font food for force form format forward found frame free friday friend from front
+full function future
+game gate general generate get git github give global go goal goes going gold good google got grade graph
+great green grid group grow guest guide
+hack half hand handle happy hard hardware hash header health hello help here hidden hide high history hold home
+hook host hot hotel hour house however html http https huge human
+icon idea ignore image import important improve include income index info inner input insert inside install
+instance int integer interface internal internet invoice issue item
+java january job join json july june junk just
+keep key keyboard kind kit know
+label language laptop large last late layout lead learn least left legal length less let letter level library
+license life light like limit line link linux list little live load local lock log login logo long look loop
+lost love
+machine mail main make manage manager many map march market master match matter may maybe mean media meet
+meeting member memory menu merge message meta method middle might mind mini minute miss mobile mode model
+module monday money monitor month more morning most mouse move movie much music must
+name native nav near need net network never new news next nice night node none normal not note nothing notice
+null number
+object october off offer office often old online only open option order other out output over owner
+pack package page paid pair panel paper parent parse part partner party pass password past paste patch path
+pay payment people per perfect person phone photo php pick picture piece ping pixel place plan platform play
+player please plugin point policy pool pop popup port position post power press preview price print private
+problem process product profile profit program project prompt proof props public pull push put python
+query question queue quick quit
+random range rate react read ready real reason receive recent record red redirect redux refresh region
+register release remote remove render repair repeat replace reply report request require reset resolve
+resource response rest result retry return review right risk road role root route router rule run
+safe sale same sample saturday save scale scan schedule school scope score screen script scroll search second
+secret section secure seed select self sell send sense sent server service session set setting settings
+setup share sheet shift ship shop short should show side sign signal simple since single site size skill skip
+slide slow small smart snap social soft software solution some song sort source space special speed split
+sprint sql square stack staff stage standard start state static status step still stock stop storage store
+story stream street string strong struct student studio style subject submit success such summary sunday super
+support sure switch symbol sync system
+table tablet tag take talk target task team tech template tenant term test tested testing text than thank
+that the theme then thing think third thread through thursday ticket time timeout title today token tool top
+topic total touch track trade traffic train transfer trash travel trend trigger true trust try tuesday
+turn tutorial twitter type
+under unit unless until update upload url usage use used user users using utils
+valid value vendor version very video view virtual visit voice void
+wait walk wall want warning watch water web website wednesday week weight welcome well were west what when
+where which while white who whole why wide widget width wifi will window windows wish with without word work
+worker world would write wrong
+year yes yesterday yet you your youtube
+zero zip zone zoom
+these there was her
+tests files users items errors apps words books pages notes logs tasks orders products projects
+emails photos videos images links tools options changes updates requests issues bugs features

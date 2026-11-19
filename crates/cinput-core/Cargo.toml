@@ -1,0 +1,10 @@
+[package]
+name = "cinput-core"
+description = "Lõi bộ gõ tiếng Việt của C_Input: Telex, VNI, đặt dấu, kiểm tra chính tả, gõ tắt"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
