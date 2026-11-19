@@ -40,6 +40,7 @@ const ID_MACROS: usize = 31;
 const ID_SETTINGS: usize = 32;
 const ID_ELEVATE: usize = 40;
 const ID_TRANSLATE: usize = 41;
+const ID_READ: usize = 42;
 const ID_EXIT: usize = 99;
 const TIMER_WATCHDOG: usize = 1;
 
@@ -74,6 +75,10 @@ struct Service {
     api_key: Option<String>,
     /// Lần báo lỗi dịch gần nhất (GetTickCount) — tránh báo dồn dập.
     last_tr_error: u32,
+    /// Lần bấm Ctrl+C gần nhất (GetTickCount) — bấm hai lần liền thì mở cửa sổ dịch.
+    last_ctrl_c: u32,
+    /// Phím C đang được giữ (bỏ qua phím tự lặp).
+    c_held: bool,
 }
 
 /// Một câu đã gửi đi dịch: vị trí trong `typed` và nội dung lúc gửi (để chắc chắn còn nguyên khi thay).
@@ -277,6 +282,9 @@ impl Service {
                 self.toggle();
             }
         }
+        if !down && vk == VK_C {
+            self.c_held = false;
+        }
         if !down {
             return false;
         }
@@ -285,6 +293,19 @@ impl Service {
         if self.cfg.switch_key == SwitchKey::AltZ && vk == VK_Z && alt && !ctrl {
             self.toggle();
             return true;
+        }
+        // Bôi đen rồi bấm Ctrl+C hai lần (trong 0,5 giây) → cửa sổ dịch đoạn vừa chép.
+        if vk == VK_C && ctrl && !alt && self.cfg.read_enabled {
+            if !self.c_held {
+                let now = unsafe { GetTickCount() };
+                if self.last_ctrl_c != 0 && now.wrapping_sub(self.last_ctrl_c) < 500 {
+                    self.last_ctrl_c = 0;
+                    self.open_reader(true);
+                } else {
+                    self.last_ctrl_c = now;
+                }
+            }
+            self.c_held = true;
         }
         if ctrl || alt || key_down(VK_LWIN) || key_down(VK_RWIN) {
             if !is_ctrl && !is_shift && !matches!(vk, VK_MENU | VK_LMENU | VK_RMENU) {
@@ -541,6 +562,38 @@ impl Service {
         self.engine.forget_history();
     }
 
+    /// Mở cửa sổ dịch cho nội dung clipboard, đặt cạnh con trỏ chuột.
+    /// `after_copy`: vừa bấm Ctrl+C — chờ ứng dụng chép xong vào clipboard.
+    fn open_reader(&mut self, after_copy: bool) {
+        if self.in_password() {
+            return;
+        }
+        // Chỉ giữ một cửa sổ dịch.
+        let title = wide(crate::popup::POPUP_TITLE);
+        unsafe {
+            let old = FindWindowW(null(), title.as_ptr());
+            if !old.is_null() {
+                PostMessageW(old, WM_CLOSE, 0, 0);
+            }
+        }
+        let (x, y) = reader_position();
+        std::thread::spawn(move || {
+            if after_copy {
+                std::thread::sleep(std::time::Duration::from_millis(180));
+            }
+            let Some(text) = win::clipboard_text(null_mut()) else { return };
+            if text.trim().is_empty() {
+                return;
+            }
+            let path = std::env::temp_dir().join(format!("c_input_sel_{}.txt", unsafe { GetTickCount() }));
+            if std::fs::write(&path, text).is_err() {
+                return;
+            }
+            unsafe { AllowSetForegroundWindow(u32::MAX) }; // cho cửa sổ dịch được lên trước
+            win::spawn_self(&["--popup", &path.to_string_lossy(), &x.to_string(), &y.to_string()]);
+        });
+    }
+
     fn translate_error(&mut self, msg: &str) {
         let now = unsafe { GetTickCount() };
         if self.last_tr_error == 0 || now.wrapping_sub(self.last_tr_error) > 30_000 {
@@ -596,6 +649,35 @@ fn separator_char(vk: VIRTUAL_KEY, shift: bool) -> char {
         (0x30, true) => ')',
         (VK_OEM_6, false) => ']',
         _ => '\0',
+    }
+}
+
+/// Vị trí (điểm logic, đã chia tỉ lệ DPI) cho cửa sổ dịch: cạnh con trỏ, không tràn khỏi màn hình.
+fn reader_position() -> (i32, i32) {
+    use windows_sys::Win32::Graphics::Gdi::{GetMonitorInfoW, MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromPoint};
+    use windows_sys::Win32::UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI};
+    unsafe {
+        let mut pt = POINT { x: 0, y: 0 };
+        GetCursorPos(&mut pt);
+        let mon = MonitorFromPoint(pt, MONITOR_DEFAULTTONEAREST);
+        let mut mi: MONITORINFO = zeroed();
+        mi.cbSize = size_of::<MONITORINFO>() as u32;
+        GetMonitorInfoW(mon, &mut mi);
+        let (mut dx, mut dy) = (96u32, 96u32);
+        GetDpiForMonitor(mon, MDT_EFFECTIVE_DPI, &mut dx, &mut dy);
+        let scale = dx.max(96) as f32 / 96.0;
+        let w = (crate::popup::POPUP_SIZE[0] * scale) as i32;
+        let h = (crate::popup::POPUP_SIZE[1] * scale) as i32;
+        let wa = mi.rcWork;
+        let mut x = (pt.x + 14).min(wa.right - w - 8).max(wa.left + 8);
+        let mut y = pt.y + 20;
+        if y + h > wa.bottom - 8 {
+            y = pt.y - h - 14; // không đủ chỗ phía dưới: hiện phía trên con trỏ
+        }
+        y = y.max(wa.top + 8);
+        x = (x as f32 / scale) as i32;
+        y = (y as f32 / scale) as i32;
+        (x, y)
     }
 }
 
@@ -766,6 +848,7 @@ fn show_menu(hwnd: HWND) {
             &format!("Dịch AI tự động → {}", ai::language_label(&cfg.translate_lang)),
             cfg.translate_enabled,
         );
+        item(menu, ID_READ, "Dịch nội dung clipboard…", false);
         item(menu, ID_CLIPBOARD, "Chuyển mã clipboard\tCtrl+Shift+F9", false);
         item(menu, ID_MACROS, "Bảng gõ tắt…", false);
         item(menu, ID_SETTINGS, "Cài đặt…\tCtrl+Shift+F5", false);
@@ -825,6 +908,9 @@ fn on_command(hwnd: HWND, id: usize) {
         ID_EXIT => unsafe {
             DestroyWindow(hwnd);
         },
+        ID_READ => {
+            with_state(|s| s.open_reader(false));
+        }
         ID_TRANSLATE => {
             with_state(|s| {
                 s.cfg.translate_enabled = !s.cfg.translate_enabled;
@@ -1021,6 +1107,8 @@ pub fn run(replace: bool) {
             next_id: 1,
             api_key,
             last_tr_error: 0,
+            last_ctrl_c: 0,
+            c_held: false,
         };
         // Khi chạy quyền Admin, Windows chặn thông điệp từ chương trình thường (cửa sổ cài đặt,
         // Explorer báo dựng lại khay) — cho phép riêng các thông điệp này.

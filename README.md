@@ -29,6 +29,9 @@ bất kỳ rồi chạy (không cần cài đặt). Yêu cầu Windows 10/11, 64
   chỗ cũ (bấm chuột, mũi tên, đổi cửa sổ, sửa vào câu → bỏ qua). Không dịch khi Enter, trong ô mật khẩu và ứng dụng
   luôn gõ tiếng Anh. API key lưu mã hoá DPAPI (chỉ tài khoản Windows của bạn giải mã được), gửi trong header HTTPS.
   Bật/tắt nhanh ở menu khay. Khi tắt, C_Input không gửi gì lên mạng.
+- **Dịch đoạn bôi đen (mặc định bật, cần API key Gemini):** bôi đen chữ ở bất kỳ đâu (tin nhắn đến, trang web) rồi
+  bấm **Ctrl+C hai lần** → cửa sổ nhỏ cạnh con trỏ hiện bản dịch sang ngôn ngữ đọc (mặc định tiếng Việt); đổi ngôn
+  ngữ ngay trong cửa sổ để dịch lại, chép bản dịch, Esc để đóng. Văn bản gốc không bị sửa. Cũng có ở menu khay.
 - **Tự viết hoa đầu câu** và **tự tắt tiếng Việt trong ô mật khẩu** (Win32 + UI Automation).
 - **Xoá lùi về từ trước:** gõ `a` + dấu cách, xoá dấu cách rồi gõ `s` → "á" (sửa tiếp được từ vừa gõ, nhớ tối đa 32 từ).
   Bấm chuột, phím mũi tên, Enter, Tab hay đổi cửa sổ thì quên các từ trước để không sửa nhầm chỗ khác.
@@ -46,6 +49,7 @@ bất kỳ rồi chạy (không cần cài đặt). Yêu cầu Windows 10/11, 64
 | `Ctrl + Shift` (hoặc `Alt + Z`) | Bật/tắt tiếng Việt |
 | `Ctrl + Shift + F5` | Mở cài đặt |
 | `Ctrl + Shift + F9` | Chuyển mã clipboard |
+| `Ctrl + C` hai lần | Dịch đoạn đang bôi đen |
 
 ## Cấu trúc
 

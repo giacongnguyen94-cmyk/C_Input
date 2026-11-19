@@ -8,6 +8,7 @@
 mod ai;
 mod config;
 mod password;
+mod popup;
 mod service;
 mod settings;
 mod ui;
@@ -18,6 +19,7 @@ fn main() {
     match args.first().map(String::as_str) {
         Some("--settings") => settings::run(args.get(1).cloned()),
         Some("--replace") => service::run(true),
+        Some("--popup") => popup::run(&args[1..]),
         _ => service::run(false),
     }
 }

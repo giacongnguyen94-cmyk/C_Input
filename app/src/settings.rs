@@ -76,6 +76,7 @@ struct SettingsApp {
     try_input: String,
     try_output: String,
     lang_search: String,
+    read_search: String,
 }
 
 impl SettingsApp {
@@ -128,6 +129,7 @@ impl SettingsApp {
             try_input: String::new(),
             try_output: String::new(),
             lang_search: String::new(),
+            read_search: String::new(),
         }
     }
 
@@ -878,13 +880,32 @@ impl SettingsApp {
             if cfg.translate_enabled {
                 ui::row_sep(ui);
                 ui::row(ui, "Dịch sang", "Ngôn ngữ đích của bản dịch. Gõ để tìm nhanh, không cần dấu.", |ui| {
-                    language_picker(ui, &mut cfg.translate_lang, search);
+                    language_picker(ui, "tr_lang", &mut cfg.translate_lang, search);
                 });
             }
         });
-        if !self.cfg.translate_enabled {
+        let read_search = &mut self.read_search;
+        let cfg = &mut self.cfg;
+        ui::card(ui, Some("Dịch đoạn bôi đen"), |ui| {
+            ui::row(
+                ui,
+                "Bấm Ctrl+C hai lần để dịch",
+                "Bôi đen một đoạn chữ ở bất kỳ đâu (tin nhắn đến, trang web, tài liệu) rồi bấm Ctrl+C hai lần liền: \
+                 bản dịch hiện trong cửa sổ nhỏ cạnh con trỏ, đổi ngôn ngữ ngay trong đó. Văn bản gốc không bị sửa.",
+                |ui| {
+                    ui::toggle(ui, &mut cfg.read_enabled);
+                },
+            );
+            if cfg.read_enabled {
+                ui::row_sep(ui);
+                ui::row(ui, "Dịch sang", "Ngôn ngữ bạn đọc — thường là tiếng Việt.", |ui| {
+                    language_picker(ui, "read_lang_settings", &mut cfg.read_lang, read_search);
+                });
+            }
+        });
+        if !self.cfg.translate_enabled && !self.cfg.read_enabled {
             ui.add(egui::Label::new(ui::muted(
-                "Bật \"Dịch câu vừa gõ\" để gắn API key Gemini và chọn ngôn ngữ. Khi tắt, C_Input không gửi gì lên mạng.",
+                "Bật một trong hai tính năng trên để gắn API key Gemini. Khi tắt cả hai, C_Input không gửi gì lên mạng.",
             )));
             return;
         }
@@ -1185,10 +1206,10 @@ impl eframe::App for SettingsApp {
 
 /// Ô chọn ngôn ngữ có tìm kiếm: mở ra là gõ được ngay, lọc không dấu, khớp cả tên tiếng Anh;
 /// Enter chọn kết quả đầu tiên.
-fn language_picker(ui: &mut Ui, selected: &mut String, search: &mut String) {
+pub(crate) fn language_picker(ui: &mut Ui, id: &str, selected: &mut String, search: &mut String) {
     use crate::ai::{POPULAR_LANGUAGES, language_label, language_matches, languages};
     let all = languages();
-    egui::ComboBox::from_id_salt("tr_lang")
+    egui::ComboBox::from_id_salt(id)
         .selected_text(language_label(selected))
         .width(240.0)
         .height(400.0)

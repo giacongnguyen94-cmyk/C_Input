@@ -69,6 +69,10 @@ pub struct Config {
     /// API key Gemini đã mã hoá DPAPI (hex) — không lưu dạng chữ thường.
     pub gemini_key: String,
     pub gemini_model: String,
+    /// Bôi đen chữ rồi bấm Ctrl+C hai lần → cửa sổ dịch đoạn đó.
+    pub read_enabled: bool,
+    /// Ngôn ngữ đọc (dịch đoạn bôi đen sang), vd "Vietnamese".
+    pub read_lang: String,
     pub switch_key: SwitchKey,
     pub beep: bool,
     pub macro_enabled: bool,
@@ -101,6 +105,8 @@ impl Default for Config {
             translate_lang: "English".to_string(),
             gemini_key: String::new(),
             gemini_model: crate::ai::DEFAULT_MODEL.to_string(),
+            read_enabled: true,
+            read_lang: "Vietnamese".to_string(),
             switch_key: SwitchKey::CtrlShift,
             beep: false,
             macro_enabled: true,
