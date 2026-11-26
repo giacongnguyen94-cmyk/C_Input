@@ -36,7 +36,7 @@ impl PopupApp {
     fn translate(&mut self) {
         let Some(key) = self.key.clone() else {
             if !fake() {
-                self.result = Some(Err(crate::i18n::t("Chưa có API key Gemini — mở Cài đặt → Dịch AI để thêm.").to_string()));
+                self.result = Some(Err(crate::i18n::t(ai::missing_key_message(&self.cfg.gemini_key)).to_string()));
                 return;
             }
             return self.spawn(String::new());
@@ -219,11 +219,10 @@ pub fn run(args: &[String]) {
         .with_taskbar(false)
         .with_always_on_top()
         .with_active(true);
-    let options = eframe::NativeOptions { viewport, ..Default::default() };
-    let _ = eframe::run_native(
+    ui::run_window(
         POPUP_TITLE,
-        options,
-        Box::new(move |cc| {
+        move || eframe::NativeOptions { viewport: viewport.clone(), ..Default::default() },
+        move |cc| {
             ui::setup(&cc.egui_ctx);
             let cfg = Config::load();
             crate::i18n::set_lang(&cfg.ui_lang);
@@ -232,7 +231,7 @@ pub fn run(args: &[String]) {
                 key: ai::unprotect_key(&cfg.gemini_key),
                 current_lang: cfg.read_lang.clone(),
                 cfg,
-                source,
+                source: source.clone(),
                 search: String::new(),
                 result: None,
                 busy: false,
@@ -243,7 +242,7 @@ pub fn run(args: &[String]) {
                 copied_at: None,
             };
             app.translate();
-            Ok(Box::new(app))
-        }),
+            app
+        },
     );
 }

@@ -279,6 +279,10 @@ pub fn unprotect_key(hex: &str) -> Option<String> {
     let mut out = CRYPT_INTEGER_BLOB { cbData: 0, pbData: null_mut() };
     unsafe {
         if CryptUnprotectData(&input, null_mut(), null(), null(), null(), CRYPTPROTECT_UI_FORBIDDEN, &mut out) == 0 {
+            crate::log::log(&format!(
+                "Không giải mã được API key đã lưu (lỗi Windows {}) — có thể cấu hình được chép từ máy / tài khoản khác",
+                windows_sys::Win32::Foundation::GetLastError()
+            ));
             return None;
         }
         let key = String::from_utf8_lossy(std::slice::from_raw_parts(out.pbData, out.cbData as usize)).into_owned();
@@ -314,7 +318,10 @@ pub(crate) fn https_request(
     headers: &str,
     body: Option<&[u8]>,
 ) -> Result<(u32, Vec<u8>), String> {
-    let err = |what: &str| format!("{what} (lỗi Windows {})", unsafe { windows_sys::Win32::Foundation::GetLastError() });
+    let err = |what: &str| {
+        let code = unsafe { windows_sys::Win32::Foundation::GetLastError() };
+        format!("{what}{} (lỗi Windows {code})", winhttp_hint(code))
+    };
     unsafe {
         let agent = wide(concat!("C_Input/", env!("CARGO_PKG_VERSION")));
         let session = Handle(WinHttpOpen(agent.as_ptr(), WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, null(), null(), 0));
@@ -376,6 +383,20 @@ pub(crate) fn https_request(
     }
 }
 
+/// Giải thích các mã lỗi WinHTTP hay gặp (khác nhau theo từng máy: mạng, tường lửa, giờ hệ thống…).
+fn winhttp_hint(code: u32) -> &'static str {
+    match code {
+        12007 => ": không tìm được địa chỉ máy chủ — máy chưa có mạng hoặc DNS bị chặn",
+        12029 | 12030 => ": không kết nối được — tường lửa, phần mềm diệt virus hoặc mạng công ty đang chặn",
+        12002 => ": hết thời gian chờ — mạng chậm hoặc bị chặn",
+        12175 | 12045 | 12057 | 12037 | 12038 | 12044 => {
+            ": lỗi chứng chỉ bảo mật — kiểm tra ngày giờ của máy, hoặc phần mềm diệt virus đang quét HTTPS"
+        }
+        12180 | 12166 | 12167 => ": lỗi cấu hình proxy của Windows",
+        _ => "",
+    }
+}
+
 /// Lỗi trả về từ API: {"error": {"message": "..."}}.
 fn api_error(status: u32, body: &str) -> String {
     let msg = serde_json::from_str::<Value>(body)
@@ -384,6 +405,9 @@ fn api_error(status: u32, body: &str) -> String {
         .unwrap_or_else(|| body.chars().take(200).collect());
     match status {
         400 if msg.to_lowercase().contains("api key") => "API key không hợp lệ".to_string(),
+        400 | 403 if msg.to_lowercase().contains("location") => {
+            "Gemini chưa hỗ trợ khu vực mạng của máy này (thường do VPN / proxy ra nước ngoài)".to_string()
+        }
         403 => format!("API key không có quyền dùng Gemini: {msg}"),
         404 => format!("Không tìm thấy model — bấm \"Kiểm tra\" để chọn lại. ({msg})"),
         429 => "Đã vượt giới hạn số lần gọi của API key — thử lại sau ít phút".to_string(),
@@ -422,7 +446,23 @@ pub fn parse_reply(body: &str) -> Result<String, String> {
 }
 
 /// Dịch một đoạn văn bản sang ngôn ngữ đích.
+/// Dịch, ghi lỗi (không kèm nội dung văn bản hay key) vào log.txt.
 pub fn translate(api_key: &str, model: &str, language: &str, text: &str) -> Result<String, String> {
+    translate_inner(api_key, model, language, text)
+        .inspect_err(|e| crate::log::log(&format!("Dịch thất bại (model {model}, sang {language}): {e}")))
+}
+
+/// Thông báo khi không có API key dùng được.
+pub fn missing_key_message(stored: &str) -> &'static str {
+    if stored.trim().is_empty() {
+        "Chưa có API key Gemini — mở Cài đặt → Dịch AI để thêm."
+    } else {
+        "API key đã lưu không đọc được trên máy / tài khoản Windows này (key được mã hoá theo từng tài khoản, \
+         chép cấu hình từ máy khác sẽ không dùng được) — nhập lại key ở Cài đặt → Dịch AI."
+    }
+}
+
+fn translate_inner(api_key: &str, model: &str, language: &str, text: &str) -> Result<String, String> {
     let model = if model.trim().is_empty() { DEFAULT_MODEL } else { model.trim() };
     let path = format!("/v1beta/models/{model}:generateContent");
     let (status, body) = https("POST", &path, api_key, Some(&request_body(text, language)))?;
@@ -452,6 +492,10 @@ pub fn parse_models(body: &str) -> Vec<String> {
 }
 
 pub fn list_models(api_key: &str) -> Result<Vec<String>, String> {
+    list_models_inner(api_key).inspect_err(|e| crate::log::log(&format!("Kiểm tra API key thất bại: {e}")))
+}
+
+fn list_models_inner(api_key: &str) -> Result<Vec<String>, String> {
     let (status, body) = https("GET", "/v1beta/models?pageSize=200", api_key, None)?;
     if status != 200 {
         return Err(api_error(status, &body));
@@ -494,6 +538,17 @@ mod tests {
         let body = r#"{"error":{"code":400,"message":"API key not valid. Please pass a valid API key.","status":"INVALID_ARGUMENT"}}"#;
         assert_eq!(api_error(400, body), "API key không hợp lệ");
         assert!(api_error(429, "{}").contains("giới hạn"));
+        let loc = r#"{"error":{"code":400,"message":"User location is not supported for the API use.","status":"FAILED_PRECONDITION"}}"#;
+        assert!(api_error(400, loc).contains("khu vực"));
+        assert!(winhttp_hint(12175).contains("ngày giờ"));
+    }
+
+    #[test]
+    fn foreign_key_is_explained() {
+        // Key mã hoá trên máy khác: không giải mã được → thông báo nói rõ phải nhập lại.
+        assert_eq!(unprotect_key("01000000d08c9ddf0115d1118c7a00c04fc297eb"), None);
+        assert!(missing_key_message("0100").contains("nhập lại"));
+        assert!(missing_key_message("").contains("Chưa có"));
     }
 
     #[test]
@@ -508,6 +563,17 @@ mod tests {
 mod network_tests {
     /// Gọi thật tới máy chủ Gemini KHÔNG kèm API key: kiểm tra đường HTTPS/TLS và cách đọc lỗi.
     /// Chạy riêng: cargo test -p c_input -- --ignored network
+    #[test]
+    #[ignore]
+    fn live_translate_with_saved_key() {
+        // Chạy tay: cargo test -p c_input live_translate -- --ignored --nocapture (dùng key đã lưu trên máy này).
+        let cfg = crate::config::Config::load();
+        let key = super::unprotect_key(&cfg.gemini_key).expect("chưa có key dùng được trên máy này");
+        let r = super::translate(&key, &cfg.gemini_model, "Vietnamese", "Good morning, how are you today?");
+        eprintln!("model {}: {r:?}", cfg.gemini_model);
+        assert!(r.is_ok());
+    }
+
     #[test]
     #[ignore]
     fn network_reaches_gemini_without_key() {

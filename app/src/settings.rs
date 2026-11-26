@@ -1630,10 +1630,9 @@ pub fn run(page: Option<String>) {
     if let Some(i) = icon {
         viewport = viewport.with_icon(i);
     }
-    let options = eframe::NativeOptions { viewport, centered: true, ..Default::default() };
-    let _ = eframe::run_native(
+    ui::run_window(
         win::SETTINGS_TITLE,
-        options,
-        Box::new(move |cc| Ok(Box::new(SettingsApp::new(cc, page)))),
+        move || eframe::NativeOptions { viewport: viewport.clone(), centered: true, ..Default::default() },
+        move |cc| SettingsApp::new(cc, page.clone()),
     );
 }

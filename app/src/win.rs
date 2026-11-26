@@ -249,7 +249,9 @@ pub fn dark_titlebar(title: &str) -> bool {
 /// Chạy lại chính chương trình này với tham số (vd: "--settings").
 pub fn spawn_self(args: &[&str]) {
     if let Ok(exe) = std::env::current_exe() {
-        let _ = std::process::Command::new(exe).args(args).spawn();
+        if let Err(e) = std::process::Command::new(&exe).args(args).spawn() {
+            crate::log::log(&format!("Không chạy được {} {:?}: {e}", exe.display(), args.first()));
+        }
     }
 }
 
@@ -298,4 +300,17 @@ pub fn file_dialog(save: bool, title: &str, filter: &[(&str, &str)], default_nam
     }
     let n = buf.iter().position(|&c| c == 0).unwrap_or(buf.len());
     Some(std::path::PathBuf::from(String::from_utf16_lossy(&buf[..n])))
+}
+
+/// Hộp thoại thông báo đơn giản.
+pub fn message_box(title: &str, text: &str) {
+    let (t, m) = (wide(title), wide(text));
+    unsafe {
+        windows_sys::Win32::UI::WindowsAndMessaging::MessageBoxW(
+            std::ptr::null_mut(),
+            m.as_ptr(),
+            t.as_ptr(),
+            windows_sys::Win32::UI::WindowsAndMessaging::MB_ICONWARNING,
+        );
+    }
 }

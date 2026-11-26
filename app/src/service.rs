@@ -537,7 +537,8 @@ impl Service {
             Some(k) => k,
             None if fake => String::new(),
             None => {
-                self.translate_error("Chưa có API key Gemini — mở Cài đặt → Dịch AI để thêm.");
+                let msg = ai::missing_key_message(&self.cfg.gemini_key);
+                self.translate_error(msg);
                 return;
             }
         };
@@ -620,14 +621,32 @@ impl Service {
             }
         }
         let (x, y) = reader_position();
+        let seq0 = unsafe { windows_sys::Win32::System::DataExchange::GetClipboardSequenceNumber() };
         std::thread::spawn(move || {
+            // Máy chậm / ứng dụng nặng (Excel, trình duyệt, máy điều khiển từ xa) chép vào clipboard chậm, và
+            // clipboard có thể đang bị ứng dụng khác mở (trình quản lý clipboard): chờ bản chép mới rồi thử đọc lại
+            // nhiều lần thay vì đọc một lần sau 180 ms.
+            let start = std::time::Instant::now();
+            let ms = |n| std::time::Duration::from_millis(n);
             if after_copy {
-                std::thread::sleep(std::time::Duration::from_millis(180));
+                while start.elapsed() < ms(600)
+                    && unsafe { windows_sys::Win32::System::DataExchange::GetClipboardSequenceNumber() } == seq0
+                {
+                    std::thread::sleep(ms(30));
+                }
+                std::thread::sleep(ms(60));
             }
-            let Some(text) = win::clipboard_text(null_mut()) else { return };
-            if text.trim().is_empty() {
-                return;
-            }
+            let text = loop {
+                match win::clipboard_text(null_mut()) {
+                    Some(t) if !t.trim().is_empty() => break t,
+                    _ if start.elapsed() < ms(1500) => std::thread::sleep(ms(50)),
+                    other => {
+                        let why = if other.is_some() { "clipboard trống" } else { "không mở được clipboard / không có chữ" };
+                        crate::log::log(&format!("Dịch đoạn bôi đen: {why}"));
+                        return;
+                    }
+                }
+            };
             let path = std::env::temp_dir().join(format!("c_input_sel_{}.txt", unsafe { GetTickCount() }));
             if std::fs::write(&path, text).is_err() {
                 return;
@@ -1165,6 +1184,14 @@ pub fn run(replace: bool) {
         let hwnd = CreateWindowExW(0, class.as_ptr(), title.as_ptr(), WS_OVERLAPPED, 0, 0, 0, 0, null_mut(), null_mut(), hinst, null());
 
         let taskbar = wide("TaskbarCreated");
+        crate::log::log(&format!(
+            "Khởi động C_Input {} (quyền Admin: {}, dịch câu: {}, dịch bôi đen: {}, có API key: {})",
+            env!("CARGO_PKG_VERSION"),
+            win::self_elevated(),
+            cfg.translate_enabled,
+            cfg.read_enabled,
+            !cfg.gemini_key.is_empty()
+        ));
         let mut engine = Engine::new(cfg.engine_options());
         engine.english = config::load_english();
         engine.auto_capitalize = cfg.auto_capitalize;

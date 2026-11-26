@@ -395,3 +395,37 @@ pub fn input_frame<R>(ui: &mut Ui, add: impl FnOnce(&mut Ui) -> R) -> R {
         .show(ui, add)
         .inner
 }
+
+/// Mở một cửa sổ egui. Thử OpenGL trước; máy không có driver OpenGL dùng được (máy ảo, Remote Desktop,
+/// card đồ hoạ cũ / "Microsoft Basic Display Adapter") thì chuyển sang DirectX 12 (wgpu, có WARP chạy bằng CPU).
+/// Lỗi được ghi vào log.txt và báo bằng hộp thoại thay vì im lặng không mở.
+pub fn run_window<A: eframe::App + 'static>(
+    title: &str,
+    options: impl Fn() -> eframe::NativeOptions,
+    make: impl Fn(&eframe::CreationContext<'_>) -> A + Clone + 'static,
+) {
+    let mut last_err = String::new();
+    let force_wgpu = std::env::var_os("CINPUT_FORCE_WGPU").is_some();
+    for renderer in [eframe::Renderer::Glow, eframe::Renderer::Wgpu] {
+        if force_wgpu && renderer == eframe::Renderer::Glow {
+            continue;
+        }
+        let mut o = options();
+        o.renderer = renderer;
+        let m = make.clone();
+        match eframe::run_native(title, o, Box::new(move |cc| Ok(Box::new(m(cc))))) {
+            Ok(()) => return,
+            Err(e) => {
+                last_err = format!("{e}");
+                crate::log::log(&format!("Không mở được cửa sổ bằng {renderer:?}: {last_err}"));
+            }
+        }
+    }
+    crate::win::message_box(
+        "C_Input",
+        &crate::i18n::fill(
+            crate::i18n::t("Không mở được cửa sổ — máy chưa có driver đồ hoạ phù hợp.\n\n{}\n\nChi tiết trong %APPDATA%\\C_Input\\log.txt"),
+            &[&last_err],
+        ),
+    );
+}

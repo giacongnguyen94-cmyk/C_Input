@@ -271,3 +271,5 @@ UTF-8 Literal (sửa lỗi font)	UTF-8 Literal (fix garbled text)
 Tổ hợp	Combining
 Gõ qua phần mềm điều khiển từ xa	Typing through remote control
 Bỏ dấu cả với phím gửi từ UltraViewer, TeamViewer, AnyDesk, bàn phím ảo… Tắt nếu dùng phần mềm tự gõ chữ (AutoHotkey, macro) mà không muốn C_Input bỏ dấu vào.	Also add accents to keys sent by UltraViewer, TeamViewer, AnyDesk, on-screen keyboards… Turn off if you use software that types for you (AutoHotkey, macros) and don't want C_Input to accent it.
+API key đã lưu không đọc được trên máy / tài khoản Windows này (key được mã hoá theo từng tài khoản, chép cấu hình từ máy khác sẽ không dùng được) — nhập lại key ở Cài đặt → Dịch AI.	The saved API key can't be read on this PC / Windows account (keys are encrypted per account; settings copied from another PC won't work) — enter the key again in Settings → AI translate.
+Không mở được cửa sổ — máy chưa có driver đồ hoạ phù hợp.\n\n{}\n\nChi tiết trong %APPDATA%\\C_Input\\log.txt	Could not open the window — no suitable graphics driver.\n\n{}\n\nDetails in %APPDATA%\\C_Input\\log.txt
